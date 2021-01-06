@@ -5,6 +5,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; 
 import { Ionicons } from '@expo/vector-icons'; 
 
+// 깃허브 업로드 테스트
+
 function WebB({ navigation }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
