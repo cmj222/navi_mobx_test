@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 // 깃허브 업로드 테스트
 // 브랜치 테스트
+// 개발브런치 업로드용 테스트
+
 
 function WebB({ navigation }) {
   return (
