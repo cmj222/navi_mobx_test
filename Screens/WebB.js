@@ -11,32 +11,28 @@ import {
 } from "react-native";
 import {WebView} from "react-native-webview";
 
-// 아이콘들은 이런 방식으로 부르는군.
-// 이러고 렌더할때 태그 생성하면서 
-// <Image source={arrowBackIcon}/> 하는식으로 연결.
+// 아이콘
 import arrowBackIcon from '../assets/arrow_back.png';
 import arrowNextIcon from '../assets/arrow_next.png';
 import webIcon from '../assets/web.png';
 import refreshIcon from '../assets/refresh_page.png';
 import incognitoIcon from '../assets/incognito.png';
 
-// keeps the reference to the browser
-// 이건 역할이 뭐지
+// 스토어 불러와서 연결시키기
+
+
+// keeps the reference to the browser ... 이건 역할이 뭐지
 let browserRef = null;
 
-// initial url for the browser
+// 브라우저 첫화면 주소
 const url = 'http://www.namu.wiki';
 
-// functions to search using different engines
+// 여러 검색엔진용 코드 있지만 생략해버림
 const searchEngines = {
     'google': (uri) => `https://www.google.com/search?q=${uri}`,
 };
 
-// upgrade the url to make it easier for the user:
-//
-// https://www.facebook.com => https://www.facebook.com
-// facebook.com => https://www.facebook.com
-// facebook => https://www.google.com/search?q=facebook
+// 주소로 개떡같이 입력해도 알아서 수정해주고, 규격외면 입력내용으로 구글검색.
 function upgradeURL(uri, searchEngine = 'google') {
     const isURL = uri.split(' ').length === 1 && uri.includes('.');
     if (isURL) {
@@ -45,7 +41,6 @@ function upgradeURL(uri, searchEngine = 'google') {
         }
         return uri;
     }
-    // search for the text in the search engine
     const encodedURI = encodeURI(uri);
     return searchEngines[searchEngine](encodedURI);
 }
@@ -78,60 +73,48 @@ class Browser extends Component {
         }
     };
 
-    // 텍스트 입력창의 텍스트를 주소로 연결 
+    // 텍스트 입력창의 텍스트를 주소로 연결하는 함수
     loadURL = () => {
-        // 스테이트의 주소텍스트를 가져오고, 기본검색엔진도 가져온다.
-        // 새로운주소 값으로 가져온것들을 조합
+        // 스테이트에서 설정값, 첫화면주소, 기본검색엔진을 가져온다. 주소가 이상하면 개선하는 함수거쳐서 주소값 반환받는다.
         const {config, urlText} = this.state;
         const { defaultSearchEngine } = config;
-        // 앞에서 다룬, 텍스트에 공백이 있는지, '.'을 포함하는지 등을 체크하여 적합한 주소 혹은 검색창직행을 반환
         const newURL = upgradeURL(urlText, defaultSearchEngine);
-
-        // 반환된 값을 현재주소와 주소창 텍스트로 덮기.
+        
+        // 반환된 주소값을 기존 주소값에 덮씌
         this.setState({
             currentURL: newURL,
             urlText: newURL
         });
 
-        //키보드 입력모드 해제
         Keyboard.dismiss();
     };
 
-    // 주소창에 입력된 텍스트를 스테이트의 주소창텍스트에 덮기.
+    // 주소창에 입력된 텍스트를 스테이트의 주소창텍스트에 덮기 함수.
     updateUrlText = (text) => {
         this.setState({
             urlText: text
         });
     };
 
-    //앞으로, 뒤로 기능 함수는 내버려두자
-    // go to the next page
+    //앞으로, 뒤로, 새로고침 기능 함수. 내버려두자.
     goForward = () => {
         if (browserRef && this.state.canGoForward) {
             browserRef.goForward();
-        }
-    };
-
-    // go back to the last page
+        }    };
     goBack = () => {
         if (browserRef && this.state.canGoBack) {
             browserRef.goBack();
-        }
-    };
-
-    // reload the page
+        }    };
     reload = () => {
         if (browserRef) {
             browserRef.reload();
-        }
-    };
+        }    };
 
     // set the reference for the browser
     setBrowserRef = (browser) => {
         if (!browserRef) {
             browserRef = browser
-        }
-    };
+        }    };
 
     // called when there is an error in the browser
     onBrowserError = (syntheticEvent) => {
@@ -139,28 +122,22 @@ class Browser extends Component {
         console.warn('WebView error: ', nativeEvent)
     };
 
-    // called when the webview is loaded
+    // 웹뷰가 로드되거나 페이지가 로드된 경우의 시행함수들. 현재상태를 반영한 상태값[앞뒤이동가능여부, 타이틀]을 스테이트에 덮씌.
     onBrowserLoad = (syntheticEvent) => {
         const {canGoForward, canGoBack, title} = syntheticEvent.nativeEvent;
         this.setState({
             canGoForward,
             canGoBack,
             title
-        })
-    };
-
-    // called when the navigation state changes (page load)
+        })    };
     onNavigationStateChange = (navState) => {
         const {canGoForward, canGoBack, title} = navState;
         this.setState({
             canGoForward,
             canGoBack,
             title
-        })
-    };
+        })    };
 
-    // can prevent requests from fulfilling, good to log requests
-    // or filter ads and adult content.
     filterRequest = (request) => {
         return true;
     };
