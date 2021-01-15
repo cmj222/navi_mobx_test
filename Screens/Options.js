@@ -1,8 +1,11 @@
 import * as React from 'react';
 import { Button, View, StyleSheet } from 'react-native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { NavigationContainer } from '@react-navigation/native';
 
+import TextStore from '../stores/TextStore'
+
+import { observer } from 'mobx-react'
+
+@observer
 export default class TextEditor extends React.Component {
     navigate = this.props.navigation;
     render() {
@@ -10,14 +13,8 @@ export default class TextEditor extends React.Component {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
 
             <Button title="Go back" onPress={() => this.props.navigation.goBack()} />
+            <Button title="옵션스크린에서 옵션이라 저장하기" onPress={() => TextStore.addUser('옵션스크린')} />
+            <Button title="옵션스크린에서 읽어내기" onPress={() => console.log(TextStore.TextAtoB)} />
         </View>
         )}
 }
-
-
-// function Options({ navigation }){  
-//     return (
-//         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-//         <Button title="Go back" onPress={() => navigation.goBack()} />
-//         </View>
-//     );

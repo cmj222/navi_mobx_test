@@ -12,30 +12,27 @@ import Options from './Screens/Options'
 import { observable, action} from 'mobx'
 import { observer, inject } from 'mobx-react'
 import { Provider } from "mobx-react";
-import MobxStore from './store/store'
-
 
 Stack = createStackNavigator();
 
-//@inject("MobxStore")
-@observer
 export default class App extends React.Component {
-  MobxStore =this.props
+
+  // 일단 최상단 클래스에서 스토어 구현은 포기하자...각 화면을 나타내는 클래스로 가서 구현해보자...
+  // TextStore =this.props
  
 
-  test1() {
-    MobxStore.addUser('모벡스 테스트용 저장 스트링')
-  }
+  // test1() {
+  //   TextStore.addUser('모벡스 테스트용 저장 스트링')
+  // }
 
-  test2() {
-    console.log(Store.TextAtoB)
-    console.log('한번 작동함.')
-  }
+  // test2() {
+  //   console.log(TextStore.TextAtoB)
+  //   console.log('한번 작동함.')
+  // }
 
   render(){
 
     return (
-      <Provider MobxStore={MobxStore}>
       <NavigationContainer>
         <Stack.Navigator 
           screenOptions={({ navigation }) => ({
@@ -58,10 +55,10 @@ export default class App extends React.Component {
                   onPress={() => navigation.navigate('TextEditor')} 
                   name="md-megaphone" size={50} />
                 <MaterialCommunityIcons 
-                  onPress={() => MobxStore.addUser('모벡스 테스트용 저장 스트링')} 
+                  //onPress={() => MobxStore.addUser('모벡스 테스트용 저장 스트링')} 
                   name="content-save" size={50} />
                 <Ionicons  
-                  onPress={() => console.log(MobxStore.TextAtoB)}
+                  //onPress={() => console.log(MobxStore.TextAtoB)}
                   name="md-folder-open"size={50} />
                 <Ionicons
                   onPress={() => navigation.navigate('Options')} 
@@ -75,7 +72,6 @@ export default class App extends React.Component {
           <Stack.Screen name="Options" component={Options} />
         </Stack.Navigator>
       </NavigationContainer>
-      </Provider>
     );
   }
 }

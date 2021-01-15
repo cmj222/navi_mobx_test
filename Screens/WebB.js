@@ -18,14 +18,14 @@ import webIcon from '../assets/web.png';
 import refreshIcon from '../assets/refresh_page.png';
 import incognitoIcon from '../assets/incognito.png';
 
-// 스토어 불러와서 연결시키기
-
+import TextStore from '../stores/TextStore'
+import { observer} from 'mobx-react'
 
 // keeps the reference to the browser ... 이건 역할이 뭐지
 let browserRef = null;
 
 // 브라우저 첫화면 주소
-const url = 'http://www.namu.wiki';
+const url = 'https://namu.wiki/w/Fate/Grand%20Order/%ED%95%B4%EC%99%B8%20%EC%84%9C%EB%B9%84%EC%8A%A4/%ED%95%9C%EA%B5%AD/%EC%82%AC%EA%B1%B4%EC%82%AC%EA%B3%A0';
 
 // 여러 검색엔진용 코드 있지만 생략해버림
 const searchEngines = {
@@ -52,6 +52,8 @@ const injectedJavaScript = `
 `;
 
 //비밀모드 관련 코드가 있음. 건들기 귀찮으니 걍 비밀모드 버튼만 없애자.
+// 모벡스를 사용할 클래스의 바로 윗줄에 옵져버 데코레이터를 붙인다.
+@observer
 class Browser extends Component {
     state = {
         currentURL: url,
@@ -129,7 +131,8 @@ class Browser extends Component {
             canGoForward,
             canGoBack,
             title
-        })    };
+        })
+    };
     onNavigationStateChange = (navState) => {
         const {canGoForward, canGoBack, title} = navState;
         this.setState({
@@ -152,6 +155,10 @@ class Browser extends Component {
     render() {
         const {config, state} = this;
         const {currentURL, urlText, canGoForward, canGoBack, title, incognito} = state;
+
+        // 스토어에 로딩된 페이지의 주소를 저장하는 기능도 넣자.
+        TextStore.UrlForFetching(currentURL)
+        
         return (
             <View style={styles.root}>
                 <View style={styles.browserContainer}>

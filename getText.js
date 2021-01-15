@@ -76,11 +76,9 @@ export default class extends React.Component {
 
   render() {
     const { isLoading, paragraph, goal } = this.state;
-    return isLoading ? (
-      <Text>로딩중.................</Text>
-    ) : (
-      <Text>로딩완료로딩완료로딩완료로딩완료로딩완료</Text>
-    );
-
+    parseTextArray = []
+    if (isLoading == false) {
+      return parseTextArray = WikiText
+    }    
   };
 }
