@@ -126,7 +126,7 @@ class Browser extends Component {
 
     // 웹뷰가 로드되거나 페이지가 로드된 경우의 시행함수들. 현재상태를 반영한 상태값[앞뒤이동가능여부, 타이틀]을 스테이트에 덮씌.
     onBrowserLoad = (syntheticEvent) => {
-        const {canGoForward, canGoBack, title} = syntheticEvent.nativeEvent;
+        const { canGoForward, canGoBack, title} = syntheticEvent.nativeEvent;
         this.setState({
             canGoForward,
             canGoBack,
@@ -139,8 +139,17 @@ class Browser extends Component {
             canGoForward,
             canGoBack,
             title
-        })    };
+        })    
+    };
 
+    // 원래 위의 네비게이션스테이트체인지를 통해서 주소변경을 감지하지만 어쩌선지 안되서 이걸로 대신 댐빵....
+    onLoadProgress = (syntheticEvent) => {
+        const { nativeEvent } = syntheticEvent;
+        TextStore.UrlForFetching(nativeEvent.url)
+        console.log(TextStore.UrlForFetch)
+        console.log('작동완료')
+    }
+    
     filterRequest = (request) => {
         return true;
     };
@@ -156,8 +165,13 @@ class Browser extends Component {
         const {config, state} = this;
         const {currentURL, urlText, canGoForward, canGoBack, title, incognito} = state;
 
-        // 스토어에 로딩된 페이지의 주소를 저장하는 기능도 넣자.
-        TextStore.UrlForFetching(currentURL)
+        //TextStore.UrlForFetching(currentURL)
+        // 작동안한다...여기가 아닌듯. 다른곳에서 구현 ㄱㄱ
+        // const {currentURL} = this.state
+        // TextStore.UrlForFetching(currentURL)
+        // console.log(currentURL + '커런트유알엘')
+        // console.log(TextStore.UrlForFetch + '스토어에 저장된 주소')
+
         
         return (
             <View style={styles.root}>
@@ -174,6 +188,7 @@ class Browser extends Component {
                         onShouldStartLoadWithRequest={this.filterRequest}
                         onMessage={this.onBrowserMessage}
                         injectedJavaScript={injectedJavaScript}
+                        onLoadProgress={this.onLoadProgress}
                     />
                 </View>
             </View>

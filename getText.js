@@ -1,6 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View, Platform, Button, FlatList, Slider, TextInput, Keyboard } from 'react-native';
 import cheerio from 'cheerio-without-node-native'
 
 export default class extends React.Component {
