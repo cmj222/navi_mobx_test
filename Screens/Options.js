@@ -19,33 +19,40 @@ export default class TextEditor extends React.Component {
         voices: [], // 선택가능한 보이스들을 여기에 담을 것임.
         ttsStatus: "initiliazing", // tts의 이벤트를 체크해서 시작중, 시작됨, 끝남, 취소됨 중 하나를 넣게함.
         selectedVoice: null, // 아직 선택된 보이스가 없음.
-        speechRate: 0.5,
-        speechPitch: 1,
+        speechRate: TextStore.speechRate,
+        speechPitch: TextStore.speechPith,
         text: "테스트 텍스트입니다.", // 읽을 내용??? 이걸 어떻게 이을까...
         language : 'kr',
-        mobx_test : TextStore.UrlForFetc
+        mobx_test : TextStore.UrlForFetc,
+        footnote_OnOff : TextStore.footnote_Checked
     };
     
-    
+
+    //이 페이지가 로딩되면 아래의 함수를 시행하여 사용가능한 음성 모으게함.
+    componentDidMount(){
+      this.initTts()
+    }
 
     initTts = async () => {
 
         // 사용가능한 음성들을 구하고 voices에 반환한다.
         const voices = await Speech.getAvailableVoicesAsync();
-
+        
         // 이런 음성들을 음성마다 네트워크연결이 불필요한지? 설치가 완료되었는지?로 필터링하고
+        // 추가로 v.language=="ko-KR" 를 붙여서 한국어인 음성만 가져온다.
         // 필터링한 요소마다 음성의 아이디, 이름, '사용가능음성'으로 오브젝트화하여 리턴한다.
         const availableVoices = voices
-            .filter(v => !v.networkConnectionRequired && !v.notInstalled)
+            .filter(v => !v.networkConnectionRequired && !v.notInstalled && v.language=="ko-KR" )
             .map(v => {
-            return { id: v.id, name: v.name, language: v.language };
+            return { id: v.identifier, name: v.name, language: v.language };
             });
+        console.log(availableVoices)
         // 선택된음성을 초기화시킨다.    
         let selectedVoice = null;
         // 만약 사용가능한 음성들이 있다면...
-        if (voices && voices.length > 0) {
+        if (availableVoices && availableVoices.length > 0) {
             // 그 중 첫번째놈의 아이디를 선택된음성으로 지정.
-            selectedVoice = voices[0].id;
+            selectedVoice = availableVoices[0].id
             
             // 이후 필터링거친 사용가능음성들을 스테이트.사용가능음성들에,
             // 선택된 음성을 스테이트.선택된음성에 덮씌운다.
@@ -54,7 +61,7 @@ export default class TextEditor extends React.Component {
                 voices: availableVoices,
                 selectedVoice,
                 ttsStatus: "initialized",
-                text: '아놔 시발'
+                text: '보이스 세팅 완료'
             });
             // 만약 추출할 음성 자체가 없다면...어쨋든 걍 시작됨으로 바꿔라.
         } else {
@@ -79,11 +86,14 @@ export default class TextEditor extends React.Component {
   //주어진 시간에 몇 단어? = 스피드, 템포
   // rate라는 인수를 받아서 설정하는 메소드 시행하고, 현재의 스테이트에 반영.
   // 슬라이더를 통해서 시행되기 때문에 슬라이더 범위 내의 값을 전달 받을 예정임.
+  // 추가로 스토어에 저장되어 텍스트에디터에서도 활용될 스피치레이트를 덮어씌운다.
   setSpeechRate = async rate => {
-    this.setState({ speechRate: rate });
+    TextStore.ST_setSpeechRate(rate)
+    this.setState({ speechRate: rate })
   };
-  // 음성 톤 설정. 위와 마찬가지
+  // 음성 높낮이 톤 설정. 위와 마찬가지
   setSpeechPitch = async rate => {
+    TextStore.ST_setSpeechPitch(rate)
     this.setState({ speechPitch: rate });
   };
 
@@ -112,10 +122,18 @@ export default class TextEditor extends React.Component {
         );
     };
 
+    setChecked = () => {
+      TextStore.footnote_toggle()
+      this.setState({footnote_OnOff : TextStore.footnote_Checked})
+    }
+
+
+
     // 컨테이너는 플렉스1, 슬라이더콘테이너는 플렉스방향가로, 플렉스는없음.
     // 텍스트 인풋은 플렉스1
     render() {
-        console.log(TextStore.UrlForFetch)
+        //const footnote_OnOff = TextStore.footnote_Checked
+        const footnote_OnOff = this.state
         return (
           <View style={styles.container}> 
         
@@ -158,16 +176,18 @@ export default class TextEditor extends React.Component {
             </View>
 
             <View style={styles.sliderContainer}>
-              <Checkbox style={margin=8} value={isChecked} onValueChange={setChecked} />
+              <Checkbox style={margin=8} value={this.state.footnote_OnOff} onValueChange={this.setChecked} />
               <Text>체크박스 옆 텍스트</Text>
             </View>
+
+            <Button title="스토어내용 콘솔로그" onPress={()=>console.log(TextStore.footnote_Checked)}/>
 
             
           
             <View style={{ flex: 0.3, alignItems: 'center', justifyContent: 'center' }}>
-              <Button title="Go back" onPress={() => this.props.navigation.goBack()} />
+              <Button title="텍스트에디터로" onPress={() => this.props.navigation.navigate('TextEditor')} />
               <Button title="옵션스크린에서 옵션이라 저장하기" onPress={() => TextStore.addUser('옵션스크린')} />
-              <Button title="옵션스크린에서 읽어내기" onPress={() => console.log(TextStore.TextAtoB)} />
+              <Button title="옵션스크린에서 읽어내기" onPress={() => console.log('스토어밸류는 ' + TextStore.TextAtoB)} />
             </View>
           </View>
         )}
