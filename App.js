@@ -15,6 +15,8 @@ import { Provider } from "mobx-react";
 
 Stack = createStackNavigator();
 
+// 구름에서 푸쉬 확인용
+
 export default class App extends React.Component {
 
   // 일단 최상단 클래스에서 스토어 구현은 포기하자...각 화면을 나타내는 클래스로 가서 구현해보자...

@@ -28,6 +28,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "description": ""
+    "description": "",
+    "packagerOpts": {
+      "port": 58105
+    }
   }
 }
