@@ -25,8 +25,15 @@ class TextStore {
   }
 
   // tts 관련 설정들.
-  @observable speechRate = 0.5
+  @observable selectedVoice = null
+  @observable speechRate = 1
   @observable speechPith = 1
+
+  @action.bound
+  ST_set_selecedVoice(voice) {
+    this.selectedVoice = voice
+    console.log(voice)
+  }
 
   @action.bound
   ST_setSpeechRate(rate) {

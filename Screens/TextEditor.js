@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button, Text, View} from 'react-native';
+import { Button, Text, View, ScrollView} from 'react-native';
 import { TextInput } from 'react-native';
 import { Dimensions } from "react-native"
 
@@ -8,15 +8,24 @@ import cheerio, { html } from 'cheerio'
 import TextStore from '../stores/TextStore'
 import { observer} from 'mobx-react'
 
+import * as Speech from 'expo-speech';
+
 @observer
 export default class TextEditor extends React.Component {
     navigate = this.props.navigation;
 
     state = {
-        TextFromWeb : '',
+        TextFromWeb : '', //
         isLoading: true,
         Url: TextStore.UrlForFetch,
-        InputText : ''
+        InputText : '',
+		
+		
+		TextToSpeech : '', //읽을 최종 결과물
+		selectedVoice : '', 
+		language : 'ko-KR', 
+		speechRate : TextStore.speechRate,
+		speechPitch : TextStore.speechPitch,
     };
 
     componentDidMount() {
@@ -72,14 +81,15 @@ export default class TextEditor extends React.Component {
         
         WikiTextSplited = WikiText.split(".")
         
-        console.log(WikiText)
+        //console.log(WikiText)
         
         this.setState({
         isLoading: false,
-        TextFromWeb: WikiText
+        TextFromWeb: WikiText,
+		TextToSpeech: WikiText.substr(0, 3000)
+		
         })
     }
-
 
     updateUrlText = (text) => {
         this.setState({
@@ -91,10 +101,40 @@ export default class TextEditor extends React.Component {
       TextStore.addUser('테스트1함수를 통해서 작동')
     }
   
-    test2 = () => {
-      console.log(TextStore.TextAtoB)
-      console.log(TextStore.UrlForFetch)
-    }
+    play = () => {
+		Speech.stop()
+		Speech.speak(
+			'현재속도는 ' + this.state.speechRate + '입니다아아아아' + this.state.TextToSpeech, {
+				rate : this.state.speechRate
+			}
+		)
+	}
+	
+	stop = () => {
+		Speech.stop()
+	}
+
+	pause = () => { 
+		//A = Speech.isSpeakingAsync()
+		if (Speech.isSpeakingAsync()) {
+			Speech.pause()
+		} else {
+			Speech.resume()
+		}
+	}
+	
+	rate_up = () => {
+		if (this.state.speechRate < 2.9) {
+			TextStore.ST_setSpeechRate(this.state.speechRate + 0.1)
+			this.setState({ speechRate : TextStore.speechRate})
+		}
+	}
+	rate_down = () => {
+		if (this.state.speechRate > 0.1) {
+			TextStore.ST_setSpeechRate(this.state.speechRate - 0.1)
+			this.setState({ speechRate : TextStore.speechRate})
+		}
+	}
 
     render() {
         console.log(TextStore.UrlForFetch)
@@ -102,27 +142,29 @@ export default class TextEditor extends React.Component {
         if (isLoading == false) { // 로딩이 완료되면 아래의 리턴을 반환.
             return (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <TextInput 
+					<View style={{flex:9}}>
+					<ScrollView>
+                    <Text 
                         style={{ 
-                            flex: 90,
-                            //height: Dimensions.get('screen').height * 0.75, 
+                            flex: 9,
                             width: Dimensions.get('screen').width * 0.99, 
                             borderColor: 'white', borderWidth: 1,
                             fontSize: 20
                             }}
-                        onChangeText={this.updateUrlText}
-                        //value={this.InputText}
-                        value={TextFromWeb}
-                        multiline={true}
-                    />
-                    <View style={{flexDirection: 'row', flex: 10}}>
+						>{TextFromWeb}</Text>
+					</ScrollView>
+					</View>
+                    <View style={{flexDirection: 'row', flex: 1}}>
                         <Button
                             title="설정으로 가기"
                             onPress={this.onPressButton.bind(this)}
                         />
                         <Button title="Go back" onPress={() => this.props.navigation.goBack()} />
                         <Button title="save" onPress={() => this.test1()} />
-                        <Button title="read" onPress={() => this.test2()} />
+                        <Button title="재생" onPress={() => this.play()} />
+						<Button title="정지" onPress={() => this.stop()} />
+						<Button title="++" onPress={() => this.rate_up()} />
+						<Button title="--" onPress={() => this.rate_down()} />
                     </View>
                 </View>
             )

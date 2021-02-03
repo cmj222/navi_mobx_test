@@ -63,6 +63,8 @@ export default class TextEditor extends React.Component {
                 ttsStatus: "initialized",
                 text: '보이스 세팅 완료'
             });
+			console.log("보이스선택완료")
+			TextStore.ST_set_selecedVoice(this.state.selectedVoice)
             // 만약 추출할 음성 자체가 없다면...어쨋든 걍 시작됨으로 바꿔라.
         } else {
             this.setState({ ttsStatus: "initialized", text:'실패다' });
