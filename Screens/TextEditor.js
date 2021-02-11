@@ -23,6 +23,7 @@ export default class TextEditor extends React.Component {
         InputText : '',
 		
 		// 데이터 구조관련 변수
+		wiki : {},
 		wiki_data : {},
 		footnote_data : {},
 		content_index : 0, // 제목 포함한 본문 요소들의 순번용
@@ -46,7 +47,7 @@ export default class TextEditor extends React.Component {
     componentDidMount() {
         const {Url} = this.state
         this.getAxios(Url);
-		this.getFootnote();
+		this.getWiki_data();
     }
 
     getAxios = async (Url) => {
@@ -61,6 +62,7 @@ export default class TextEditor extends React.Component {
         $('.wiki-table').remove() // 테이블 자체를 제거하는 코드. 이후 옵션으로 만들자.
 		// ==================================================================
 		
+		var wiki = {}
         $(".w").children().filter('.wiki-heading').each(function (index, element) {
         wiki[index] = ['','']
         wiki[index][0] = ($(element).text())
@@ -68,31 +70,34 @@ export default class TextEditor extends React.Component {
         $(".w").children().filter('.wiki-heading-content').each(function (index, element) {
         wiki[index][1] = ($(element).text())
         })
+		this.setState({wiki:wiki})
 		
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
-		
+
 		// 데이터 구조 돌입하기 전에 미리 주석에 대한 정리가 필요.
 		// 다음과 같을 것이다. {1 : { footnote_string: [1], text : "텍스트" }
 		var footnote_data = {}
-
         $(".footnote-list").each(function (index, element) {
-			var index_plus = index + 1
+			//var index_plus = index + 1 이거 대신에 아래처럼 [index+1] 로 해도 되겠지?
 			var index_string = '[' + String(index+1) + ']' // [1]
 			
 			var index_n_text = $(element).text() // [1] 이 당시에는 셀리카도 FR이었다.
 			var footnote_text = index_n_text.split(index_string)[1] // "이 당시에는 셀리카도 FR이었다."
-        	
-			footnote_data[index_plus] = { footnote_string : index_string , text : footnote_text}
+			footnote_data[index + 1] = { footnote_string : index_string , text : footnote_text}
 		})
+			this.setState({footnote_data : footnote_data})
+	}
+		
 		
 		//=============================데이터 구조처리========================================
 		//=============================데이터 구조처리========================================
 		//=============================데이터 구조처리========================================
-		
+	getWiki_data = async () => {
 		var wiki_data = {}
-		console.log(Object.keys(wiki).length)
+		var wiki = this.state.wiki
+		console.log(Object.keys(this.state.wiki).length)
 		for (var index_of_wiki=0; index_of_wiki<8; index_of_wiki++){
 			console.log(index_of_wiki + "이 현재의 인덱스오브위키[=챕터]")
 			var element_wiki = wiki[index_of_wiki]
