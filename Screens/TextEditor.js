@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button, Text, View, ScrollView} from 'react-native';
+import { Button, Text, View, ScrollView,  Alert} from 'react-native';
 import { TextInput } from 'react-native';
 import { Dimensions } from "react-native"
 
@@ -10,7 +10,6 @@ import { observer} from 'mobx-react'
 
 import * as Speech from 'expo-speech';
 
-// 실시간공유??
 @observer
 export default class TextEditor extends React.Component {
     navigate = this.props.navigation;
@@ -18,11 +17,14 @@ export default class TextEditor extends React.Component {
         TextFromWeb : '', //
         isLoading: true,
         //Url: TextStore.UrlForFetch,
-		Url : 'https://namu.wiki/w/%ED%8A%B8%EB%A3%A8%EB%A8%BC%20%EB%8F%85%ED%8A%B8%EB%A6%B0', //실험에 쓸만한 임시주소. 나중에 위로 바꿔라.
+		// 전쟁. 20개 이상항목 https://namu.wiki/w/%EC%A0%84%EC%9F%81
+		// 트루먼 독트린. 적당한 길이와 각 홍목의 분량 https://namu.wiki/w/%ED%8A%B8%EB%A3%A8%EB%A8%BC%20%EB%8F%85%ED%8A%B8%EB%A6%B0
+		Url : 'https://namu.wiki/w/%EC%A0%84%EC%9F%81', //실험에 쓸만한 임시주소. 나중에 위로 바꿔라.
         InputText : '',
 		
 		// 데이터 구조관련 변수
 		wiki_data : {},
+		footnote_data : {},
 		content_index : 0, // 제목 포함한 본문 요소들의 순번용
 		footnote_index  : 1, // 여러 챕터 전체에 걸친 주석과 연결될 번호. [1] 부터 시작이니 초기값은 1로. 
 		
@@ -43,13 +45,11 @@ export default class TextEditor extends React.Component {
 
     componentDidMount() {
         const {Url} = this.state
-        this.getAxios(Url);        
+        this.getAxios(Url);
+		this.getFootnote();
     }
 
     getAxios = async (Url) => {
-        let wiki = {}
-        let WikiTextSplited = []
-        
         const response = await fetch(Url);   // fetch page
         const htmlString = await response.text() // get response text 
         const $ = cheerio.load(htmlString);           // parse HTML string
@@ -84,10 +84,7 @@ export default class TextEditor extends React.Component {
 			var index_n_text = $(element).text() // [1] 이 당시에는 셀리카도 FR이었다.
 			var footnote_text = index_n_text.split(index_string)[1] // "이 당시에는 셀리카도 FR이었다."
         	
-			//var footnote_obj = { [index_plus] : { footnote_string : index_string , text : footnote_text} }
 			footnote_data[index_plus] = { footnote_string : index_string , text : footnote_text}
-			//var footnote_data = { ...footnote_data, footnote_obj}
-			// return footnote_data 이때 리턴을 써야했던가...???
 		})
 		
 		//=============================데이터 구조처리========================================
@@ -95,8 +92,8 @@ export default class TextEditor extends React.Component {
 		//=============================데이터 구조처리========================================
 		
 		var wiki_data = {}
-		
-		for (var index_of_wiki=0; index_of_wiki<2; index_of_wiki++){
+		console.log(Object.keys(wiki).length)
+		for (var index_of_wiki=0; index_of_wiki<8; index_of_wiki++){
 			console.log(index_of_wiki + "이 현재의 인덱스오브위키[=챕터]")
 			var element_wiki = wiki[index_of_wiki]
 			// 인덱스오브위키는 [제목, 본문]인 챕터들 중 몇번째인지를 의미. 
@@ -170,43 +167,15 @@ export default class TextEditor extends React.Component {
 				} 
 			}
 			this.setState({content_index : 0}) // 매 챕터마다 제목을 0으로 그 다음 문장부터는 1,2,3...이 되도록 초기화하는 과정을 챕터전환 직전에 시행.
-			//console.log(" 다음 챕터로 넘어가기 전 마지막으로 위키데이터 오브젝트 전체 출력")
-			console.log(wiki_data)
-			this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
+			console.log(" 다음 챕터로 넘어가기 전 마지막으로 출력")
+			//console.log(wiki_data)
+			//
 		}
-        let txtList = []
-        for (let id in wiki){
-        let content = wiki[id]
-        txtList.push(content[0])
-        txtList.push(content[1])
-        }
-
-        var WikiText = txtList.toString()
-                
-        let footnote = {} // 주석을 [1] : '이 당시에는 ...', [2] : '어쩌구저쩌구..' 하게 만들것임.
-
-        $(".footnote-list").each(function (index, element) {
-        var index_text = $(element).text() // [1] 이 당시에는 셀리카도 FR이었다.
-        var index_plus_1 = '[' + String(index+1) + ']'
-        var only_text = index_text.split(index_plus_1)[1]
-        
-        footnote[index_plus_1] = only_text
-        })
-
-        for (let id in footnote){
-        WikiText = WikiText.replace(id, `.` + id + `.`)
-        //WikiText = WikiText.replace(id, footnote[id]) 주석을 주석내용으로 바꿔치기식
-        }
-        
-        WikiTextSplited = WikiText.split(".")
-        
+		this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
         //console.log(WikiText)
         
         this.setState({
         isLoading: false,
-        TextFromWeb: WikiText,
-		TextToSpeech: WikiText.substr(0, 3000)
-		
         })
     }
 
@@ -217,17 +186,15 @@ export default class TextEditor extends React.Component {
     };
 
   
-    play = () => {
+    play = (chapter_reading, content_reading) => {
 		Speech.stop()
 		console.log("챕터길이는 " + this.state.chapter_length)
 		if (this.state.chapter_length == 0){
 			console.log("챕터길이가 0이니 아래에서 브레이크")
 			return false
 		} 
-		this.setState({chapter_reading:0, content_reading:0})
-		console.log(this.state.wiki_data[0][2].text)
 		Speech.speak(
-			this.state.wiki_data[0][0].text, {
+			this.state.wiki_data[chapter_reading][content_reading].text, {
 				rate : this.state.speechRate, onDone : this.play_next
 			}
 		)
@@ -260,15 +227,15 @@ export default class TextEditor extends React.Component {
 			}
 		)
 	}
-	wjsekf = (next_or_before) => {
-		var content_reading = this.state.content_reading
-		var chapter_reading = this.state.chapter_reading
-		var content_length = Object.keys(this.state.wiki_data[chapter_reading]).length
+	trans = (next_or_before) => {
+
+		
 		
 	}
 	
 	stop = () => {
 		Speech.stop()
+		this.setState({chapter_reading : 0 , content_reading : 0})
 	}
 
 	pause = () => { 
@@ -293,10 +260,25 @@ export default class TextEditor extends React.Component {
 		}
 	}
 	next_content = () => {
+		//일단 현재 재생하던것을 멈추고	
+		Speech.stop()
+		this.play_next()
+			
+	}
+	before_content = () => {
 		
 	}
 	next_chapter = () => {
-		
+		Speech.stop()
+		//현재의 챕터를 확인하고, 전체 챕터의 길이와 비교해서 다음이 있다면 챕터바꾸고 컨텐츠번호는 0으로 초기화하면서 플레이.
+		var chapter_reading = this.state.chapter_reading + 1
+		if (chapter_reading > this.state.chapter_length){
+			//챕터 번호를 초기화시키고 이를 업데이트한 다음에 재생과정을 브레이크해라.
+			Alert.alert("마지막 챕터", "현재의 챕터가 마지막 챕터입니다.")
+			return false
+		}
+		this.setState({chapter_reading : chapter_reading, content_reading : 0})
+		this.play(chapter_reading, 0)
 	}
 
     render() {
@@ -318,7 +300,7 @@ export default class TextEditor extends React.Component {
 					</View>
                     <View style={{flexDirection: 'row', flex: 1}}>
                         <Button title="설정" onPress={this.onPressButton.bind(this)} />
-                        <Button title="재생" onPress={() => this.play()} />
+                        <Button title="재생" onPress={() => this.play(0, 0)} />
 						<Button title="정지" onPress={() => this.stop()} />
 						<Button title="다음문장" onPress={() => this.next_content()} />
                         <Button title="다음챕터" onPress={() => this.next_chapter()} />
