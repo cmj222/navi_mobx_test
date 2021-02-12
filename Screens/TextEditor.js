@@ -46,13 +46,15 @@ export default class TextEditor extends React.Component {
     componentDidMount() {
         const {Url} = this.state
         this.awaitfunction(Url)
-		this.getAxios(Url);        
+		//this.getAxios(Url);        
     }
 	
-	awaitfunction(Url){
-		var wiki = this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
-		var footnote_data = this.getFootnote()	// 풋노트 데이터를 반환.
-		var wiki_data = this.getWikiData(wiki, footnote_data) // 위의 위키와 풋노트데이터를 받아서 원하는 궁극적 자료를 얻음.
+	awaitfunction = async (Url) => {
+		//var wiki,footnote_data = this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
+		var wiki = await this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
+		//var footnote_data = this.getFootnote($)	// 풋노트 데이터를 반환.
+		var footnote_data = await this.state.footnote_data
+		var wiki_data = await this.getWikiData(wiki, footnote_data) // 위의 위키와 풋노트데이터를 받아서 원하는 궁극적 자료를 얻음.
 		this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
 		this.setState({isLoading: false}) // 할 거 다 했으니 로딩 완료다.
 	}
@@ -75,16 +77,12 @@ export default class TextEditor extends React.Component {
         wiki[index][1] = ($(element).text())
         })
 		
-		return wiki
-	}
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
-	getFootnote = async() => {
 		// 데이터 구조 돌입하기 전에 미리 주석에 대한 정리가 필요.
 		// 다음과 같을 것이다. {1 : { footnote_string: [1], text : "텍스트" }
 		var footnote_data = {}
-
         $(".footnote-list").each(function (index, element) {
 			var index_plus = index + 1
 			var index_string = '[' + String(index+1) + ']' // [1]
@@ -94,7 +92,8 @@ export default class TextEditor extends React.Component {
         	
 			footnote_data[index_plus] = { footnote_string : index_string , text : footnote_text}
 		})
-		return footnote_data
+		this.setState({footnote_data:footnote_data})
+		return wiki//, footnote_data
 	}
 		
 		//=============================데이터 구조처리========================================
@@ -104,9 +103,9 @@ export default class TextEditor extends React.Component {
 		var wiki = wiki
 		var footnote_data = footnote_data
 		var wiki_data = {}
-		console.log(Object.keys(wiki).length)
+		//console.log(Object.keys(wiki).length)
 		var wiki_length
-		for (var index_of_wiki=0; index_of_wiki<8; index_of_wiki++){
+		for (var index_of_wiki=0; index_of_wiki<4; index_of_wiki++){
 			console.log(index_of_wiki + "이 현재의 인덱스오브위키[=챕터]")
 			var element_wiki = wiki[index_of_wiki]
 			// 인덱스오브위키는 [제목, 본문]인 챕터들 중 몇번째인지를 의미. 
@@ -137,6 +136,9 @@ export default class TextEditor extends React.Component {
 			//var index_of_wiki = index_of_wiki
 			
 			// 이제 위 어레이의 각 요소[=문장]마다 주석여부를 체크.
+			
+			// 여기 아래를 어떻게 await로 묶어놔야하나???
+			
 			for (var index_array_of_contents = 0; index_array_of_contents <array_of_contents.length; index_array_of_contents++){
 				var element_array = array_of_contents[index_array_of_contents]
 				
@@ -188,12 +190,6 @@ export default class TextEditor extends React.Component {
         //console.log(WikiText)
         return wiki_data
     }
-
-    updateUrlText = (text) => {
-        this.setState({
-            InputText: text
-        });
-    };
 
   
     play = (chapter_reading, content_reading) => {
