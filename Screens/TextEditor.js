@@ -9,7 +9,7 @@ import TextStore from '../stores/TextStore'
 import { observer} from 'mobx-react'
 
 import * as Speech from 'expo-speech';
-
+//await적용 본격화 시작 전에 세이브
 @observer
 export default class TextEditor extends React.Component {
     navigate = this.props.navigation;
@@ -23,9 +23,8 @@ export default class TextEditor extends React.Component {
         InputText : '',
 		
 		// 데이터 구조관련 변수
-		wiki : {},
 		wiki_data : {},
-		footnote_data : {},
+		
 		content_index : 0, // 제목 포함한 본문 요소들의 순번용
 		footnote_index  : 1, // 여러 챕터 전체에 걸친 주석과 연결될 번호. [1] 부터 시작이니 초기값은 1로. 
 		
@@ -46,23 +45,28 @@ export default class TextEditor extends React.Component {
 
     componentDidMount() {
         const {Url} = this.state
-        this.getAxios(Url);
-		this.getWiki_data();
+        this.awaitfunction(Url)
+		this.getAxios(Url);        
     }
-
+	
+	awaitfunction(Url){
+		var wiki = this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
+		var footnote_data = this.getFootnote()	// 풋노트 데이터를 반환.
+		var wiki_data = this.getWikiData(wiki, footnote_data) // 위의 위키와 풋노트데이터를 받아서 원하는 궁극적 자료를 얻음.
+		this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
+		this.setState({isLoading: false}) // 할 거 다 했으니 로딩 완료다.
+	}
     getAxios = async (Url) => {
         const response = await fetch(Url);   // fetch page
         const htmlString = await response.text() // get response text 
         const $ = cheerio.load(htmlString);           // parse HTML string
-                
+		var wiki = {}                
         // ======이후 옵션의 체크에 따라서 적용이 될지 안될지를 결정하게 만들자======
         $(".wiki-macro-toc").remove()  //목차제거. 이런형식도 발동되는군
         $('.wiki-edit-section').remove() // 항목별로 있는 [편집] 제거
         $('.wiki-folding').remove() // 테이블이 있는 경우 [펼치기,접기] 제거
         $('.wiki-table').remove() // 테이블 자체를 제거하는 코드. 이후 옵션으로 만들자.
 		// ==================================================================
-		
-		var wiki = {}
         $(".w").children().filter('.wiki-heading').each(function (index, element) {
         wiki[index] = ['','']
         wiki[index][0] = ($(element).text())
@@ -70,34 +74,38 @@ export default class TextEditor extends React.Component {
         $(".w").children().filter('.wiki-heading-content').each(function (index, element) {
         wiki[index][1] = ($(element).text())
         })
-		this.setState({wiki:wiki})
 		
+		return wiki
+	}
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
-
+	getFootnote = async() => {
 		// 데이터 구조 돌입하기 전에 미리 주석에 대한 정리가 필요.
 		// 다음과 같을 것이다. {1 : { footnote_string: [1], text : "텍스트" }
 		var footnote_data = {}
+
         $(".footnote-list").each(function (index, element) {
-			//var index_plus = index + 1 이거 대신에 아래처럼 [index+1] 로 해도 되겠지?
+			var index_plus = index + 1
 			var index_string = '[' + String(index+1) + ']' // [1]
 			
 			var index_n_text = $(element).text() // [1] 이 당시에는 셀리카도 FR이었다.
 			var footnote_text = index_n_text.split(index_string)[1] // "이 당시에는 셀리카도 FR이었다."
-			footnote_data[index + 1] = { footnote_string : index_string , text : footnote_text}
+        	
+			footnote_data[index_plus] = { footnote_string : index_string , text : footnote_text}
 		})
-			this.setState({footnote_data : footnote_data})
+		return footnote_data
 	}
 		
-		
 		//=============================데이터 구조처리========================================
 		//=============================데이터 구조처리========================================
 		//=============================데이터 구조처리========================================
-	getWiki_data = async () => {
+	getWikiData = async(wiki, footnote_data) =>{
+		var wiki = wiki
+		var footnote_data = footnote_data
 		var wiki_data = {}
-		var wiki = this.state.wiki
-		console.log(Object.keys(this.state.wiki).length)
+		console.log(Object.keys(wiki).length)
+		var wiki_length
 		for (var index_of_wiki=0; index_of_wiki<8; index_of_wiki++){
 			console.log(index_of_wiki + "이 현재의 인덱스오브위키[=챕터]")
 			var element_wiki = wiki[index_of_wiki]
@@ -176,12 +184,9 @@ export default class TextEditor extends React.Component {
 			//console.log(wiki_data)
 			//
 		}
-		this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
+		//this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
         //console.log(WikiText)
-        
-        this.setState({
-        isLoading: false,
-        })
+        return wiki_data
     }
 
     updateUrlText = (text) => {
