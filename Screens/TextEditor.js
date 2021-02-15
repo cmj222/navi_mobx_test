@@ -35,25 +35,38 @@ export default class TextEditor extends React.Component {
 		speechPitch : TextStore.speechPitch,
 		
 		// 읽기관련 좌표 변수
+		index_of_wiki : 0,
 		chapter_length : 0,
 		content_length : 0,
 		chapter_reading : 0,
-		content_reading : 0
+		content_reading : 0,
+		keepgoing : false,
+		object_length : 0
     };
 
     componentDidMount() {
         const {Url} = this.state
+		this.c8await(Url)
         this.awaitfunction(Url)
     }
-	
-	awaitfunction = async (Url) => {
-		//var wiki,footnote_data = this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
+	c8await = async (Url) => {
 		var wiki = await this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
+		var object_length = await Object.keys(wiki).length
+		this.setState({wiki:wiki, object_length : object_length})
+		console.log("wiki 처리작업 완료" + object_length + wiki)
+	}
+
+	awaitfunction = () => {
+		//var wiki,footnote_data = this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
+		var wiki = this.state.wiki
+		
 		//var footnote_data = this.getFootnote($)	// 풋노트 데이터를 반환.
 		var footnote_data = this.state.footnote_data
-		var wiki_data = await this.getWikiData(wiki, footnote_data) // 위의 위키와 풋노트데이터를 받아서 원하는 최종 자료를 반환케함.
-		this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
+		this.state.keepgoing = setInterval(this.getWikiData, 1000)
+		//var wiki_data = await this.getWikiData(wiki, footnote_data) // 위의 위키와 풋노트데이터를 받아서 원하는 최종 자료를 반환케함.
+		//this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
 		this.setState({isLoading: false}) // 할 거 다 했으니 로딩 완료. 화면 출력.
+
 	}
     getAxios = async (Url) => {
         const response = await fetch(Url);   // fetch page
@@ -89,108 +102,117 @@ export default class TextEditor extends React.Component {
         	
 			footnote_data[index_plus] = { footnote_string : index_string , text : footnote_text}
 		})
-		this.setState({footnote_data:footnote_data})
+		this.setState({footnote_data:footnote_data, wiki:wiki})
 		return wiki//, footnote_data
 	}
 		
 		//=============================데이터 구조처리========================================
 		//=============================데이터 구조처리========================================
 		//=============================데이터 구조처리========================================
-	getWikiData = async(wiki, footnote_data) =>{
-		var wiki = wiki
-		var footnote_data = footnote_data
-		var wiki_data = {}
+	getWikiData = () =>{
+		var wiki = this.state.wiki
+		var footnote_data = this.state.footnote_data
+		var wiki_data = this.state.wiki_data
 		//console.log(Object.keys(wiki).length)
 		var wiki_length
-		var index_of_wiki = 0
+		var index_of_wiki = this.state.index_of_wiki  //초기값은 0
 
-		while (index_of_wiki < 8){
+		//while (index_of_wiki < 8){
 		//for (var index_of_wiki=0; index_of_wiki<4; index_of_wiki++){
-			console.log(index_of_wiki + "이 현재의 인덱스오브위키[=챕터]")
-			var element_wiki = wiki[index_of_wiki]
-			// 인덱스오브위키는 [제목, 본문]인 챕터들 중 몇번째인지를 의미. 
-			
-			var content_index = this.state.content_index //초기값은 0.
-			wiki_data[index_of_wiki] = {[content_index] : {type : "heading", text : element_wiki[0] }} // 초기값은 0챕터 안에 0번째 요소로 제목타입의 "제목텍스트"가 들어옴.
-			this.setState({ content_index : content_index + 1}) // 요소가 추가될때마다 요소인덱스를 +1시키자.
-			
-			// 의도대로라면 위키데이터 = { 0[번째챕터]: { 0[번째요소값] : { 타입:제목, 텍스트:"내용"}, ??? }} 이 된다. 이제 본문을 다루며 뒤의 ???를 채워나간다.
-			
-			//만약 본문에 말줄임표가 있다면 .. 으로. 그걸 다시 . 으로 줄이게. 더하여 특유의 말줄임표기 (...)도 생략하는 과정을 추가
-			while (element_wiki[1].includes("(...)")){
-				element_wiki[1].replace("(...)", "")
-			}
-			while (element_wiki[1].includes("...")){
-				element_wiki[1].replace("...", "..")
-			}
-			while (element_wiki[1].includes("..")){
-				element_wiki[1].replace("..", ".")
-			}
-			
-			// 한 챕터의 내용의 문장들을 . 을 기준으로 나눠서 어레이화.
-			var array_of_contents = element_wiki[1].split(".")
-			array_of_contents.pop() // . 을 기준으로 챕터를 나누면 마지막 문장의 ~~. 도 취급되서 마지막에 빈 텍스트가 오브젝트로 들어가게됨. 이를 삭제
-
-			
-			// 위의 . 기준으로 나뉜 문단의 문장들은 몇 챕터인지를 공유해야하니, 현재 챕터를 나타내는 인덱스를 변수로 삼언하고 아래의 each의 인수로 건내주자
-			//var index_of_wiki = index_of_wiki
-			
-			// 이제 위 어레이의 각 요소[=문장]마다 주석여부를 체크.
-			
-			// 여기 아래를 어떻게 await로 묶어놔야하나???
-			// 와일 구문으로 전환 개시 2월12일 오후 8시55분
-			var funcIncfunc = (function(){
-				for (var index_array_of_contents = 0; index_array_of_contents <array_of_contents.length; index_array_of_contents++){
-					var element_array = array_of_contents[index_array_of_contents]
-					// 위키_데이터를 위의 평션의 인수로 챕터를 추가해야하는가? 아니면 없어도 알아서 하위함수는 상위함수에서 선언한 변수값을 반영하는가???
-					//var content_index = this.state.content_index // 챕터 내에서 제목[=0] 다음으로의 순번. 최초값 1
-					content_index = this.state.content_index // 챕터 내에서 제목[=0] 다음으로의 순번. 최초값 1
-					var footnote_index = this.state.footnote_index // 전 챕터에 걸쳐 있을 주석에 대한 번호. [1]부터 시작해야하니 최초값 1
-					var footnote_string = "["+String(footnote_index)+"]" // 최초의 경우에는 "[1]"
-					var footnote_text = footnote_data[footnote_index].text
-					var after_footnote = "" // 한 문장에 여러 주석이 있는 경우 뒤에 남는 문장도 다시 여러번 자르는 과정 필요. 이때 돌려가며 사용될 변수
-					//만약 문장에 [1]이 없다면 주석없는 문장이니 통채로 오브젝트화하고 머지
-					if (!element_array.includes(footnote_string)){
-						wiki_data[index_of_wiki][content_index] = {type : "sentence", text : element_array}
-						this.setState({ content_index : content_index + 1})
-						continue
-					} else {
-					}
-					//위의 브레이크가 발동 안함 = 주석이 있는 문장의 경우 반복문 
-					while (element_array.includes(footnote_string)){
-						wiki_data[index_of_wiki][content_index] = { type: "footnote", text : footnote_text}
-						footnote_index += 1 // 이걸로 풋노트스트링도 변하면서 자동으로 [2]에 맞춘 루프구문이 시행될까...? 
-						// ㅇㅇ 된다.
-						content_index += 1 // 주석도 컨텐츠의 번호 대상이니 추가해준다.
-						var split_sentnece = element_array.split(footnote_string) // 주석을 기준으로 문장을 나눈다. "그는 / [1] / 언제나[2] 그래왔다."
-						after_footnote = split_sentnece[1] // 더이상 주석이 없을 때까지 계속 돌려질 값. 
-						element_array = split_sentnece[1] // 이제 뒤에 남은 문장이 체크대상이 된다. 
-						//[2]가 포함되었는지 체크하고 그를 기준으로 전자를 오브젝트화 및 병합한다.
-						//다룰 대상이 "언제나 / [2] / 그래왔다" 로 바뀌게 된다.
-						//추가된 번호를 스테이트에 업뎃. 주석이 포함된 한문장이 완료되서 다음 문장을 다룰때마다 초기에 이 스테이트값을 가져와서 대입함으로서 증가된 번호를 매 문장마다 반영.
-						this.setState({footnote_index : footnote_index, content_index : content_index}) 
-					}
-					// 컨티뉴 통과했으니 주석이 있는 문장인데 위의 주석 체크조건문도 통과했으면 남는 건 주석있는 문장의 마지막 텍스트다.
-					if (after_footnote !== '' || '.') { // 문장 마지막 주석 뒤에 마침표가 아닌 텍스트 내용이 있다면...
-						var content_index = this.state.content_index // 챕터 내에서 몇번째인지를 반영하기 위해서 동기화시켜주고...
-						wiki_data[index_of_wiki][content_index] = { type : "sentence", text : after_footnote}
-						this.setState({content_index : content_index + 1})
-					} 
-				}
-				return wiki_data
-			})
-			wiki_data = await funcIncfunc
-			this.setState({content_index : 0}) // 매 챕터마다 제목을 0으로 그 다음 문장부터는 1,2,3...이 되도록 초기화하는 과정을 챕터전환 직전에 시행.
-			console.log(" 다음 챕터로 넘어가기 전 마지막으로 출력")
-			index_of_wiki++
-			//console.log(wiki_data)
+		if (index_of_wiki + 1 > this.state.object_length) {
+			clearInterval(this.state.keepgoing)
+			console.log("오브젝트의 길이는 " + this.state.object_length + "이고 현재 위키인덱스는 " + index_of_wiki + "이며 여기에 1을 더한 값이 길이보다 길어서 스탑이다.")
+			return false
 		}
+		
+		console.log(index_of_wiki + "이 현재의 인덱스오브위키[=챕터]")
+		var element_wiki = wiki[index_of_wiki]
+		// 인덱스오브위키는 [제목, 본문]인 챕터들 중 몇번째인지를 의미. 
+
+		var content_index = this.state.content_index //초기값은 0.
+		wiki_data[index_of_wiki] = {[content_index] : {type : "heading", text : element_wiki[0] }} // 초기값은 0챕터 안에 0번째 요소로 제목타입의 "제목텍스트"가 들어옴.
+		this.setState({ content_index : content_index + 1}) // 요소가 추가될때마다 요소인덱스를 +1시키자.
+
+		// 의도대로라면 위키데이터 = { 0[번째챕터]: { 0[번째요소값] : { 타입:제목, 텍스트:"내용"}, ??? }} 이 된다. 이제 본문을 다루며 뒤의 ???를 채워나간다.
+
+		//만약 본문에 말줄임표가 있다면 .. 으로. 그걸 다시 . 으로 줄이게. 더하여 특유의 말줄임표기 (...)도 생략하는 과정을 추가
+		while (element_wiki[1].includes("(...)")){
+			element_wiki[1].replace("(...)", "")
+		}
+		while (element_wiki[1].includes("...")){
+			element_wiki[1].replace("...", "..")
+		}
+		while (element_wiki[1].includes("..")){
+			element_wiki[1].replace("..", ".")
+		}
+
+		// 한 챕터의 내용의 문장들을 . 을 기준으로 나눠서 어레이화.
+		var array_of_contents = element_wiki[1].split(".")
+		array_of_contents.pop() // . 을 기준으로 챕터를 나누면 마지막 문장의 ~~. 도 취급되서 마지막에 빈 텍스트가 오브젝트로 들어가게됨. 이를 삭제
+
+
+		// 위의 . 기준으로 나뉜 문단의 문장들은 몇 챕터인지를 공유해야하니, 현재 챕터를 나타내는 인덱스를 변수로 삼언하고 아래의 each의 인수로 건내주자
+		//var index_of_wiki = index_of_wiki
+
+		// 이제 위 어레이의 각 요소[=문장]마다 주석여부를 체크.
+
+		// 여기 아래를 어떻게 await로 묶어놔야하나???
+		// 와일 구문으로 전환 개시 2월12일 오후 8시55분
+		var funcIncfunc = (function(){
+			for (var index_array_of_contents = 0; index_array_of_contents <array_of_contents.length; index_array_of_contents++){
+				var element_array = array_of_contents[index_array_of_contents]
+				// 위키_데이터를 위의 평션의 인수로 챕터를 추가해야하는가? 아니면 없어도 알아서 하위함수는 상위함수에서 선언한 변수값을 반영하는가???
+				//var content_index = this.state.content_index // 챕터 내에서 제목[=0] 다음으로의 순번. 최초값 1
+				content_index = this.state.content_index // 챕터 내에서 제목[=0] 다음으로의 순번. 최초값 1
+				var footnote_index = this.state.footnote_index // 전 챕터에 걸쳐 있을 주석에 대한 번호. [1]부터 시작해야하니 최초값 1
+				var footnote_string = "["+String(footnote_index)+"]" // 최초의 경우에는 "[1]"
+				var footnote_text = footnote_data[footnote_index].text
+				var after_footnote = "" // 한 문장에 여러 주석이 있는 경우 뒤에 남는 문장도 다시 여러번 자르는 과정 필요. 이때 돌려가며 사용될 변수
+				//만약 문장에 [1]이 없다면 주석없는 문장이니 통채로 오브젝트화하고 머지
+				if (!element_array.includes(footnote_string)){
+					wiki_data[index_of_wiki][content_index] = {type : "sentence", text : element_array}
+					this.setState({ content_index : content_index + 1})
+					continue
+				} else {
+				}
+				//위의 브레이크가 발동 안함 = 주석이 있는 문장의 경우 반복문 
+				while (element_array.includes(footnote_string)){
+					wiki_data[index_of_wiki][content_index] = { type: "footnote", text : footnote_text}
+					footnote_index += 1 // 이걸로 풋노트스트링도 변하면서 자동으로 [2]에 맞춘 루프구문이 시행될까...? 
+					// ㅇㅇ 된다.
+					content_index += 1 // 주석도 컨텐츠의 번호 대상이니 추가해준다.
+					var split_sentnece = element_array.split(footnote_string) // 주석을 기준으로 문장을 나눈다. "그는 / [1] / 언제나[2] 그래왔다."
+					after_footnote = split_sentnece[1] // 더이상 주석이 없을 때까지 계속 돌려질 값. 
+					element_array = split_sentnece[1] // 이제 뒤에 남은 문장이 체크대상이 된다. 
+					//[2]가 포함되었는지 체크하고 그를 기준으로 전자를 오브젝트화 및 병합한다.
+					//다룰 대상이 "언제나 / [2] / 그래왔다" 로 바뀌게 된다.
+					//추가된 번호를 스테이트에 업뎃. 주석이 포함된 한문장이 완료되서 다음 문장을 다룰때마다 초기에 이 스테이트값을 가져와서 대입함으로서 증가된 번호를 매 문장마다 반영.
+					this.setState({footnote_index : footnote_index, content_index : content_index}) 
+				}
+				// 컨티뉴 통과했으니 주석이 있는 문장인데 위의 주석 체크조건문도 통과했으면 남는 건 주석있는 문장의 마지막 텍스트다.
+				if (after_footnote !== '' || '.') { // 문장 마지막 주석 뒤에 마침표가 아닌 텍스트 내용이 있다면...
+					var content_index = this.state.content_index // 챕터 내에서 몇번째인지를 반영하기 위해서 동기화시켜주고...
+					wiki_data[index_of_wiki][content_index] = { type : "sentence", text : after_footnote}
+					this.setState({content_index : content_index + 1})
+				} 
+			}
+			return wiki_data
+		})
+		
+		this.setState({content_index : 0, wiki_data : wiki_data}) // 매 챕터마다 제목을 0으로 그 다음 문장부터는 1,2,3...이 되도록 초기화하는 과정을 챕터전환 직전에 시행.
+		console.log(" 다음 챕터로 넘어가기 전 마지막으로 출력")
+		index_of_wiki++
+		this.setState({index_of_wiki : index_of_wiki})
+		//console.log(wiki_data)
+		
 		//this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data).length})
         //console.log(WikiText)
-		wiki_data = await wiki_data
         return wiki_data
     }
+	
+	getwikidata_interval() {
 
+    }
   
     play = (chapter_reading, content_reading) => {
 		Speech.stop()
