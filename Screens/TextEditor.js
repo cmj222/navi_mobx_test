@@ -7,7 +7,7 @@ import cheerio, { html } from 'cheerio'
 
 import TextStore from '../stores/TextStore'
 import { observer} from 'mobx-react'
-//새 작업환경
+//개별모드로 진입하기 직전 세이브
 import * as Speech from 'expo-speech';
 @observer
 export default class TextEditor extends React.Component {
