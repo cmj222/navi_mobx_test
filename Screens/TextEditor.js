@@ -18,7 +18,8 @@ export default class TextEditor extends React.Component {
         //Url: TextStore.UrlForFetch,
 		// 전쟁. 20개 이상항목 https://namu.wiki/w/%EC%A0%84%EC%9F%81
 		// 트루먼 독트린. 적당한 길이와 각 홍목의 분량 https://namu.wiki/w/%ED%8A%B8%EB%A3%A8%EB%A8%BC%20%EB%8F%85%ED%8A%B8%EB%A6%B0
-		Url : 'https://namu.wiki/w/%ED%8A%B8%EB%A3%A8%EB%A8%BC%20%EB%8F%85%ED%8A%B8%EB%A6%B0', //실험에 쓸만한 임시주소. 나중에 TextStore.UrlForFetch 로 바꾸기.
+		Url : 'https://namu.wiki/w/%EC%A0%84%EC%9F%81', 
+		//실험에 쓸만한 임시주소. 나중에 TextStore.UrlForFetch 로 바꾸기.
         InputText : '',
 		
 		// 데이터 구조관련 변수
@@ -51,27 +52,20 @@ export default class TextEditor extends React.Component {
     }
 	getDataFromUrl = async (Url) => {
 		var wiki_footnote_array = await this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
-		//var object_length = Object.keys(wiki).length
 		var wiki = wiki_footnote_array[0]
 		var footnote_data = wiki_footnote_array[1]
+		console.log("위키와 풋노트데이터 작업완료.")
 		this.setState({wiki:wiki})
 		this.setState({footnote_data:footnote_data}) 
-		//this.setState({footnote_data : footnote_data, object_length : object_length})
-		console.log("겟데이터프롬유알엘 작업 완료")
+		
 		var wiki_data = await this.getWikiData(0)
 		this.setState({wiki_data : wiki_data})
-	}
-
-	afterGetData = async () => {
-		var wiki = this.state.wiki
-		var footnote_data = this.state.footnote_data
-		console.log(wiki)
-		var wiki_data = await this.getWikiData(0) // 위의 위키와 풋노트데이터를 받아서 원하는 0번째 챕터를 분석한 위키_데이터를 받음
-		this.setState({wiki_data : wiki_data, chapter_length : Object.keys(wiki_data[0]).length})
+		this.setState({chapter_length : Object.keys(wiki).length})
+		console.log(Object.keys(wiki).length)
+		console.log("위키데이터와 위키렝스 작업완료.")
 		this.setState({isLoading: false}) // 할 거 다 했으니 로딩 완료. 화면 출력.
-		
-
 	}
+
     getAxios = async (Url) => {
         const response = await fetch(Url);   // fetch page
         const htmlString = await response.text() // get response text 
@@ -126,8 +120,6 @@ export default class TextEditor extends React.Component {
 
 		var element_wiki = wiki[chapter_index]
 		// 인덱스오브위키는 위키 내부에 [제목, 본문]으로 이뤄진 챕터들 중 몇번째인지를 의미. 
-		console.log(wiki)
-		
 		
 		wiki_data[chapter_index] = {[content_index] : {type : "heading", text : element_wiki[0] }} 
 		// 초기값은 0챕터 안에 0번째 요소로 제목타입의 "제목텍스트"가 들어옴.
@@ -137,13 +129,13 @@ export default class TextEditor extends React.Component {
 
 		//만약 본문에 말줄임표가 있다면 .. 으로. 그걸 다시 . 으로 줄이게. 더하여 특유의 말줄임표기 (...)도 생략하는 과정을 추가
 		while (element_wiki[1].includes("(...)")){
-			element_wiki[1].replace("(...)", "")
+			element_wiki[1] = element_wiki[1].replace("(...)", "")
 		}
 		while (element_wiki[1].includes("...")){
-			element_wiki[1].replace("...", "..")
+			element_wiki[1] = element_wiki[1].replace("...", ".")
 		}
 		while (element_wiki[1].includes("..")){
-			element_wiki[1].replace("..", ".")
+			element_wiki[1] = element_wiki[1].replace("..", ".")
 		}
 
 		// 한 챕터의 내용의 문장들을 . 을 기준으로 나눠서 어레이화.
@@ -164,14 +156,14 @@ export default class TextEditor extends React.Component {
 			
 			//만약 문장에 [1]이 없다면 주석없는 문장이니 통채로 오브젝트화하여 반영. 반복문 처음으로 되돌아감.
 			if (!element_array.includes(footnote_string)){
-				wiki_data[index_of_wiki][content_index] = {type : "sentence", text : element_array}
+				wiki_data[chapter_index][content_index] = {type : "sentence", text : element_array}
 				content_index ++
 				continue
 			} else {
 			}
 			//위의 컨티뉴가 발동 안함 = 주석이 있는 문장의 경우 반복문 
 			while (element_array.includes(footnote_string)){
-				wiki_data[index_of_wiki][content_index] = { type: "footnote", text : footnote_text}
+				wiki_data[chapter_index][content_index] = { type: "footnote", text : footnote_text}
 				footnote_index ++ // 이걸로 풋노트스트링도 변하면서 자동으로 [2]에 맞춘 루프구문이 시행될까...? 
 				// ㅇㅇ 된다.
 				content_index ++ // 주석도 컨텐츠의 번호 대상이니 추가해준다.
@@ -185,7 +177,7 @@ export default class TextEditor extends React.Component {
 			}
 			// 컨티뉴 통과했으니 주석이 있는 문장인데 위의 주석 체크조건문도 통과했으면 남는 건 주석있는 문장의 마지막 텍스트다.
 			if (after_footnote !== '' || '.') { // 문장 마지막 주석 뒤에 마침표가 아닌 텍스트 내용이 있다면...
-				wiki_data[index_of_wiki][content_index] = { type : "sentence", text : after_footnote}
+				wiki_data[chapter_index][content_index] = { type : "sentence", text : after_footnote}
 				content_index++
 			} 
 		}
@@ -208,12 +200,11 @@ export default class TextEditor extends React.Component {
 		)
 	}
 	
-	play_next = () => {
+	play_next = async () => {
 		var content_reading = this.state.content_reading + 1 // 초기값은 1
 		var chapter_reading = this.state.chapter_reading	// 초기값은 0
 		// 챕터길이는 위키데이터 모집하면서 구해놨으니 현재 읽는 챕터의 컨텐츠 길이를 구한다.
 		var content_length = Object.keys(this.state.wiki_data[chapter_reading]).length
-		console.log(content_length)
 		// 만약 읽을 컨텐츠 번호가 컨텐츠 길이보다 길다면...이때 컨텐츠길이는 숫자 그자체이지만 리딩번호는 0부터 시작하니 맞추기 위해서 후자에 -1
 		if (content_reading > content_length - 1){
 			// 컨텐츠번호를 초기화시키고, 챕터번호를 + 1 시켜라
@@ -230,13 +221,17 @@ export default class TextEditor extends React.Component {
 
 		//만약 챕터번호가 원래의 챕터번호와 달라졌다면...새로운 챕터번호에 해당하는 위키의 챕터 데이터를 해석하게 함수시행.
 		if (!this.state.chapter_reading == chapter_reading){
-			this.getWikiData(chapter_reading)
+			console.log("챕터 바뀐 상황")
+			var wiki_data = await this.getWikiData(chapter_reading)
+			this.setState({wiki_data:wiki_data})
+			content_reading = 0
 		}
 		
 		this.setState({chapter_reading : chapter_reading, content_reading : content_reading})
 		console.log("스피크 하기 직전의 챕터리딩과 콘텐츠리딩은 " + chapter_reading + "과 " + content_reading)
 		
 		Speech.speak(
+			//this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
 			this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
 				onDone : this.play_next
 			}
@@ -272,25 +267,32 @@ export default class TextEditor extends React.Component {
 		//일단 현재 재생하던것을 멈추고	
 		Speech.stop()
 		this.play_next()
-			
 	}
 	before_content = () => {
 		
 	}
-	next_chapter = () => {
+	next_chapter = async () => {
 		Speech.stop()
 		//현재의 챕터를 확인하고, 전체 챕터의 길이와 비교해서 다음이 있다면 챕터바꾸고 컨텐츠번호는 0으로 초기화하면서 플레이.
 		var chapter_reading = this.state.chapter_reading + 1
-		if (chapter_reading > this.state.chapter_length){
+		if (chapter_reading + 1 > this.state.chapter_length){
 			//챕터 번호를 초기화시키고 이를 업데이트한 다음에 재생과정을 브레이크해라.
 			chapter_reading = chapter_reading - 1
 			Alert.alert("마지막 챕터", "현재의 챕터가 마지막 챕터입니다.")
 			return false
 		}
+		console.log("다음챕터 버튼 눌러서 챕터 바뀜")
+		var wiki_data = await this.getWikiData(chapter_reading)
+		this.setState({wiki_data:wiki_data})
 		this.setState({chapter_reading : chapter_reading, content_reading : 0})
 		this.play(chapter_reading, 0)
 	}
-
+	test1 = async () => {
+		this.setState({wiki_data:{}})
+		var test_data = await this.getWikiData(4)
+		console.log(test_data)
+		
+	}
     render() {
         const { isLoading, TextFromWeb} = this.state
         if (isLoading == false) { // 로딩이 완료되면 아래의 리턴을 반환.
@@ -316,6 +318,10 @@ export default class TextEditor extends React.Component {
                         <Button title="다음챕터" onPress={() => this.next_chapter()} />
 						<Button title="속도+" onPress={() => this.rate_up()} />
 						<Button title="속도-" onPress={() => this.rate_down()} />
+                    </View>
+					<View style={{flexDirection: 'row', flex: 1}}>
+                        <Button title="테스트1" onPress={() => this.test1()} />
+                        <Button title="재생" onPress={() => this.play(0, 0)} />
                     </View>
                 </View>
             )
