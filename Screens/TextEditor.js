@@ -1,14 +1,16 @@
 import * as React from 'react';
-import { Button, Text, View, ScrollView,  Alert} from 'react-native';
+import { Button, Text, View, ScrollView, StyleSheet, Alert} from 'react-native';
 import { TextInput } from 'react-native';
 import { Dimensions } from "react-native"
 
 import cheerio, { html } from 'cheerio'
-
+import Slider from '@react-native-community/slider';
 import TextStore from '../stores/TextStore'
 import { observer} from 'mobx-react'
-//개별모드로 진입하기 직전 세이브
 import * as Speech from 'expo-speech';
+
+import { AntDesign } from '@expo/vector-icons';
+
 @observer
 export default class TextEditor extends React.Component {
     navigate = this.props.navigation;
@@ -35,7 +37,8 @@ export default class TextEditor extends React.Component {
 		language : 'ko-KR', 
 		speechRate : TextStore.speechRate,
 		speechPitch : TextStore.speechPitch,
-		
+		isPlaying : false,
+
 		// 읽기관련 좌표 변수
 		index_of_wiki : 0,
 		chapter_length : 0,
@@ -126,7 +129,10 @@ export default class TextEditor extends React.Component {
 		content_index ++
 
 		// 의도대로라면 위키데이터 = { 0[번째챕터]: { 0[번째요소값] : { 타입:제목, 텍스트:"내용"}, ??? }} 이 된다. 이제 본문을 다루며 뒤의 ???를 채워나간다.
-
+		
+		// 옵션으로 적용여부를 정하게.
+		element_wiki[1] = element_wiki[1].replace(/[一-龥]/ig,'')
+		
 		//만약 본문에 말줄임표가 있다면 .. 으로. 그걸 다시 . 으로 줄이게. 더하여 특유의 말줄임표기 (...)도 생략하는 과정을 추가
 		while (element_wiki[1].includes("(...)")){
 			element_wiki[1] = element_wiki[1].replace("(...)", "")
@@ -185,31 +191,45 @@ export default class TextEditor extends React.Component {
 			return wiki_data
 	}
 
-
+	//===========================버튼 처리 구간==============================================
+	//===========================버튼 처리 구간==============================================
+	//===========================버튼 처리 구간==============================================
     play = (chapter_reading, content_reading) => {
-		Speech.stop()
-		console.log("챕터길이는 " + this.state.chapter_length)
-		if (this.state.chapter_length == 0){
-			console.log("챕터길이가 0이니 아래에서 브레이크")
-			return false
-		} 
-		Speech.speak(
-			this.state.wiki_data[chapter_reading][content_reading].text, {
-				rate : this.state.speechRate, onDone : this.play_next
-			}
+		if (!this.state.isPlaying){
+			this.setState({isPlaying:true})	
+			Speech.stop()
+			console.log("챕터길이는 " + this.state.chapter_length)
+			if (this.state.chapter_length == 0){
+				console.log("챕터길이가 0이니 아래에서 브레이크")
+				return false
+			} 
+			Speech.speak(
+				this.state.wiki_data[chapter_reading][content_reading].text, {
+					rate : this.state.speechRate, onDone : this.play_next
+				}
 		)
+		} else {
+			this.setState({isPlaying:false})	
+			Speech.stop()
+		}
 	}
-	
+	stop = () => {
+		Speech.stop()
+		this.setState({chapter_reading : 0 , content_reading : 0})
+	}
+
 	play_next = async () => {
 		var content_reading = this.state.content_reading + 1 // 초기값은 1
 		var chapter_reading = this.state.chapter_reading	// 초기값은 0
 		// 챕터길이는 위키데이터 모집하면서 구해놨으니 현재 읽는 챕터의 컨텐츠 길이를 구한다.
 		var content_length = Object.keys(this.state.wiki_data[chapter_reading]).length
+		console.log(content_length)
 		// 만약 읽을 컨텐츠 번호가 컨텐츠 길이보다 길다면...이때 컨텐츠길이는 숫자 그자체이지만 리딩번호는 0부터 시작하니 맞추기 위해서 후자에 -1
 		if (content_reading > content_length - 1){
 			// 컨텐츠번호를 초기화시키고, 챕터번호를 + 1 시켜라
+			console.log(content_reading + "은 컨텐츠리딩이 더 크다..." + content_length + " -1 보다... 그러니 0으로 리셋하고 " + chapter_reading + "을 ++")
 			content_reading = 0
-			chapter_reading += 1
+			chapter_reading ++
 		}
 		// 만약 챕터의 길이까지도 총 챕터의 길이를 넘는다면...
 		if (chapter_reading > this.state.chapter_length){
@@ -220,35 +240,57 @@ export default class TextEditor extends React.Component {
 		}
 
 		//만약 챕터번호가 원래의 챕터번호와 달라졌다면...새로운 챕터번호에 해당하는 위키의 챕터 데이터를 해석하게 함수시행.
-		if (!this.state.chapter_reading == chapter_reading){
+		if (!(chapter_reading == this.state.chapter_reading) ){
 			console.log("챕터 바뀐 상황")
 			var wiki_data = await this.getWikiData(chapter_reading)
 			this.setState({wiki_data:wiki_data})
 			content_reading = 0
+			this.setState({chapter_reading : chapter_reading, content_reading : content_reading})
 		}
 		
 		this.setState({chapter_reading : chapter_reading, content_reading : content_reading})
 		console.log("스피크 하기 직전의 챕터리딩과 콘텐츠리딩은 " + chapter_reading + "과 " + content_reading)
-		
-		Speech.speak(
-			//this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
-			this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
-				onDone : this.play_next
+		if (this.state.isPlaying){
+			Speech.speak(
+				this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
+					onDone : this.play_next
+				}
+			)
+		}
+	}
+	play_before = async () => {
+		var content_reading = this.state.content_reading - 1 
+		var chapter_reading = this.state.chapter_reading	
+		// 만약 현재 컨텐츠리딩이 0이라면 현재 챕터가 0인지 체크. 0이면 씹는다. 아니라면 이전의 챕터로 가라...
+		if (content_reading < 0){
+			if (chapter_reading == 0){
+				return false
 			}
-		)
-	}
-	trans = (next_or_before) => {
-		
-		
-	}
-	
-	stop = () => {
-		Speech.stop()
-		this.setState({chapter_reading : 0 , content_reading : 0})
+			content_reading = 0
+			chapter_reading --
+			var wiki_data = await this.getWikiData(chapter_reading)
+			this.setState({wiki_data:wiki_data})
+			//this.setState({chapter_reading : chapter_reading, content_reading : content_reading})
+		}
+
+		this.setState({chapter_reading : chapter_reading, content_reading : content_reading})
+		if (this.state.isPlaying){
+			Speech.speak(
+				this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
+					onDone : this.play_next
+				}
+			)
+		}
 	}
 
 	pause = () => { 
-
+		Speech.stop()
+	}
+	resume = () => {
+		Speech.speak(
+			this.state.wiki_data[this.state.chapter_reading][this.state.content_reading].text, {
+				rate : this.state.speechRate, onDone : this.play_next
+			})
 	}
 	
 	rate_up = () => {
@@ -263,13 +305,14 @@ export default class TextEditor extends React.Component {
 			this.setState({ speechRate : TextStore.speechRate})
 		}
 	}
+
 	next_content = () => {
-		//일단 현재 재생하던것을 멈추고	
 		Speech.stop()
 		this.play_next()
 	}
 	before_content = () => {
-		
+		Speech.stop()
+		this.play_before()
 	}
 	next_chapter = async () => {
 		Speech.stop()
@@ -285,14 +328,49 @@ export default class TextEditor extends React.Component {
 		var wiki_data = await this.getWikiData(chapter_reading)
 		this.setState({wiki_data:wiki_data})
 		this.setState({chapter_reading : chapter_reading, content_reading : 0})
-		this.play(chapter_reading, 0)
+		//this.play(chapter_reading, 0)
+		if (this.state.isPlaying){
+		Speech.speak(
+			this.state.wiki_data[chapter_reading][0].text, {
+				rate : this.state.speechRate, onDone : this.play_next
+			})}
 	}
+	before_chapter = async () => {
+		Speech.stop()
+		//현재의 챕터에 - 1하고, 0 보다 작으면 챕터0, 컨텐츠0으로 재생.
+		var chapter_reading = this.state.chapter_reading - 1 
+		if (chapter_reading < 0){
+			//챕터 번호를 초기화시키고 이를 업데이트한 다음에 재생과정을 브레이크해라.
+			chapter_reading = 0
+			var content_reading = 0
+			this.setState({chapter_reading:chapter_reading, content_reading:content_reading})
+			this.play(0,0)
+			return false
+		}
+		console.log("이전챕터 버튼 눌러서 챕터 바뀜")
+		var wiki_data = await this.getWikiData(chapter_reading)
+		this.setState({wiki_data:wiki_data})
+		this.setState({chapter_reading : chapter_reading, content_reading : 0})
+		if (this.state.isPlaying){
+			Speech.speak(
+				this.state.wiki_data[chapter_reading][0].text, {
+					rate : this.state.speechRate, onDone : this.play_next
+				})}
+	}
+	
 	test1 = async () => {
-		this.setState({wiki_data:{}})
-		var test_data = await this.getWikiData(4)
-		console.log(test_data)
-		
+		var testText = '123上海상해上海'
+		var reg_test = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/ig
+		var reg_test2 = /[一-龥]/ig
+		const res = reg_test2.test(testText);
+		const res2 = testText.replace(reg_test2, '')
+		console.log(res2)
 	}
+
+	setSpeechRate = async rate => {
+		this.setState({ speechRate: rate });
+	};
+	
     render() {
         const { isLoading, TextFromWeb} = this.state
         if (isLoading == false) { // 로딩이 완료되면 아래의 리턴을 반환.
@@ -311,17 +389,32 @@ export default class TextEditor extends React.Component {
 					</ScrollView>
 					</View>
                     <View style={{flexDirection: 'row', flex: 1}}>
-                        <Button title="설정" onPress={this.onPressButton.bind(this)} />
-                        <Button title="재생" onPress={() => this.play(0, 0)} />
-						<Button title="정지" onPress={() => this.stop()} />
-						<Button title="다음문장" onPress={() => this.next_content()} />
-                        <Button title="다음챕터" onPress={() => this.next_chapter()} />
+						<AntDesign name="banckward" size={48} color="black"onPress={() => this.before_chapter()} />
+						<AntDesign name="caretleft" size={48} color="black"onPress={() => this.before_content()} />
+						<AntDesign name={this.state.isPlaying ? "pausecircle" : "play"}
+						size={48} color="black" onPress={() => this.play(this.state.chapter_reading,this.state.content_reading)} />
+						<AntDesign name="caretright" size={48} color="black"onPress={() => this.next_content()} />
+						<AntDesign name="forward" size={48} color="black" onPress={() => this.next_chapter()}/>
+                    </View>
+					<View style={styles.sliderContainer}>
+						<AntDesign style={styles.sliderIcon} name="sound" size={60} color="black" />
+						<Slider
+							style={styles.slider} // 너비값width 150
+							minimumValue={0.05}
+							maximumValue={3.99}
+							value={this.state.speechRate}
+							onSlidingComplete={this.setSpeechRate} // 슬라이딩 조작 완료시 함수시행. (인수)를 안써도 자동으로 밸류를 전달하게 되는듯. 하긴...
+						/>
+					</View>
+					<View style={{flexDirection: 'row', flex: 1}}>
+						<AntDesign name="pausecircle" size={48} color="black" onPress={() => this.pause()} />
+						<AntDesign name="playcircleo" size={48} color="black" onPress={() => this.stop()}/>
+						<AntDesign name="stepforward" size={48} color="black" onPress={() => this.resume()}/>		
+                        <Button title="테스트1" onPress={() => this.test1()} />
+						<Button title="설정" onPress={this.onPressButton.bind(this)} />
 						<Button title="속도+" onPress={() => this.rate_up()} />
 						<Button title="속도-" onPress={() => this.rate_down()} />
-                    </View>
-					<View style={{flexDirection: 'row', flex: 1}}>
-                        <Button title="테스트1" onPress={() => this.test1()} />
-                        <Button title="재생" onPress={() => this.play(0, 0)} />
+						<AntDesign name="sound" size={24} color="black" />
                     </View>
                 </View>
             )
@@ -337,3 +430,24 @@ export default class TextEditor extends React.Component {
         }
 }
 
+const styles = StyleSheet.create({
+	container: {
+	  marginTop: 26,
+	  flex: 1,
+	  justifyContent: "center",
+	  alignItems: "center",
+	  backgroundColor: "#F5FCFF"
+	},
+	sliderContainer: {
+	  flexDirection: "row",
+	  justifyContent: "center",
+	  alignItems: "center"
+	},
+	sliderIcon: {
+	  textAlign: "center",
+	  marginRight: 20
+	},
+	slider: {
+	  width: 150
+	}
+  });

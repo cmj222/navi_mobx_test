@@ -81,7 +81,7 @@ export default class App extends Component<Props> {
     this.setState({ selectedVoice: voice.identifier });
   };
 
-  //이거 흠...당장은 불필요하지만 나중에 음성선택기능 넣을때 필요할듯.
+  // 플랫리스트에서 활용할 아이템
   //선택가능한 음성들로 리스트 만들기.
   renderVoiceItem = ({ item }) => {
     // 음성이라는 오브젝트를 아이템이라는 인수로 받으면...
@@ -168,7 +168,6 @@ export default class App extends Component<Props> {
           />
         </View>
         
-        // 텍스트입력창. 
         <TextInput
           style={styles.textInput} // 너비100%
           multiline={true}  // 여러줄짜리.
