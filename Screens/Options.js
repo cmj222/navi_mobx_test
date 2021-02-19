@@ -101,7 +101,7 @@ export default class TextEditor extends React.Component {
 
   // 아래의 음성리스트의 음성 선택시 발동. 원래는 언어도 따라서 선택하는데 해당 기능은 삭제하고 음성선택만 남긴다.
   onVoicePress = async voice => {
-    this.setState({ selectedVoice: voice.identifier });
+    this.setState({ selectedVoice: voice.id});
   };
 
   //선택가능한 음성들로 리스트 만들기.
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      marginTop: 20
+      marginTop: 40
     },
     sliderLabel: {
       textAlign: "center",
