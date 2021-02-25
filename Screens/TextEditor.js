@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { Button, Text, View, ScrollView, StyleSheet, Alert} from 'react-native';
-import { TextInput } from 'react-native';
 import { Dimensions } from "react-native"
 
 import cheerio, { html } from 'cheerio'
@@ -51,7 +50,6 @@ export default class TextEditor extends React.Component {
     componentDidMount() {
         const {Url} = this.state
 		this.getDataFromUrl(Url)
-        //this.afterGetData()
     }
 	getDataFromUrl = async (Url) => {
 		var wiki_footnote_array = await this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
@@ -213,10 +211,6 @@ export default class TextEditor extends React.Component {
 			Speech.stop()
 		}
 	}
-	stop = () => {
-		Speech.stop()
-		this.setState({chapter_reading : 0 , content_reading : 0})
-	}
 
 	play_next = async () => {
 		var content_reading = this.state.content_reading + 1 // 초기값은 1
@@ -292,19 +286,6 @@ export default class TextEditor extends React.Component {
 				rate : this.state.speechRate, onDone : this.play_next
 			})
 	}
-	
-	rate_up = () => {
-		if (this.state.speechRate < 2.9) {
-			TextStore.ST_setSpeechRate(this.state.speechRate + 0.1)
-			this.setState({ speechRate : TextStore.speechRate})
-		}
-	}
-	rate_down = () => {
-		if (this.state.speechRate > 0.1) {
-			TextStore.ST_setSpeechRate(this.state.speechRate - 0.1)
-			this.setState({ speechRate : TextStore.speechRate})
-		}
-	}
 
 	next_content = () => {
 		Speech.stop()
@@ -358,6 +339,14 @@ export default class TextEditor extends React.Component {
 				})}
 	}
 	
+	add_this_page = () => {
+		//현재의 url을 모벡스에 추가.
+	}
+
+	setSpeechRate = async rate => {
+		this.setState({ speechRate: rate });
+	};
+
 	test1 = async () => {
 		var testText = '123上海상해上海'
 		var reg_test = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/ig
@@ -367,9 +356,7 @@ export default class TextEditor extends React.Component {
 		console.log(res2)
 	}
 
-	setSpeechRate = async rate => {
-		this.setState({ speechRate: rate });
-	};
+
 	
     render() {
         const { isLoading, TextFromWeb} = this.state
@@ -395,6 +382,8 @@ export default class TextEditor extends React.Component {
 						size={48} color="black" onPress={() => this.play(this.state.chapter_reading,this.state.content_reading)} />
 						<AntDesign name="caretright" size={48} color="black"onPress={() => this.next_content()} />
 						<AntDesign name="forward" size={48} color="black" onPress={() => this.next_chapter()}/>
+						<AntDesign name="plussquareo" size={48} color="black" onPress={() => this.add_this_page()}/>
+						<AntDesign name="setting" size={48} color="black" onPress={() => this.props.navigation.navigate('Options')}/>
                     </View>
 					<View style={styles.sliderContainer}>
 						<AntDesign style={styles.sliderIcon} name="sound" size={60} color="black" />
@@ -407,14 +396,8 @@ export default class TextEditor extends React.Component {
 						/>
 					</View>
 					<View style={{flexDirection: 'row', flex: 1}}>
-						<AntDesign name="pausecircle" size={48} color="black" onPress={() => this.pause()} />
-						<AntDesign name="playcircleo" size={48} color="black" onPress={() => this.stop()}/>
-						<AntDesign name="stepforward" size={48} color="black" onPress={() => this.resume()}/>		
-                        <Button title="테스트1" onPress={() => this.test1()} />
 						<Button title="설정" onPress={this.onPressButton.bind(this)} />
-						<Button title="속도+" onPress={() => this.rate_up()} />
-						<Button title="속도-" onPress={() => this.rate_down()} />
-						<AntDesign name="sound" size={24} color="black" />
+						<Button title="텍스트에디터로" onPress={() => this.props.navigation.navigate('TextEditor')} />
                     </View>
                 </View>
             )

@@ -11,32 +11,30 @@ import {
 } from "react-native";
 import {WebView} from "react-native-webview";
 
-// 아이콘들은 이런 방식으로 부르는군.
-// 이러고 렌더할때 태그 생성하면서 
-// <Image source={arrowBackIcon}/> 하는식으로 연결.
+// 텍스트에디터와 합치기 전 버전 보관
+
+// 아이콘
 import arrowBackIcon from '../assets/arrow_back.png';
 import arrowNextIcon from '../assets/arrow_next.png';
 import webIcon from '../assets/web.png';
 import refreshIcon from '../assets/refresh_page.png';
 import incognitoIcon from '../assets/incognito.png';
 
-// keeps the reference to the browser
-// 이건 역할이 뭐지
+import TextStore from '../stores/TextStore'
+import { observer} from 'mobx-react'
+
+// keeps the reference to the browser ... 이건 역할이 뭐지
 let browserRef = null;
 
-// initial url for the browser
-const url = 'http://www.namu.wiki';
+// 브라우저 첫화면 주소
+const url = 'https://namu.wiki/w/Fate/Grand%20Order/%ED%95%B4%EC%99%B8%20%EC%84%9C%EB%B9%84%EC%8A%A4/%ED%95%9C%EA%B5%AD/%EC%82%AC%EA%B1%B4%EC%82%AC%EA%B3%A0';
 
-// functions to search using different engines
+// 여러 검색엔진용 코드 있지만 생략해버림
 const searchEngines = {
     'google': (uri) => `https://www.google.com/search?q=${uri}`,
 };
 
-// upgrade the url to make it easier for the user:
-//
-// https://www.facebook.com => https://www.facebook.com
-// facebook.com => https://www.facebook.com
-// facebook => https://www.google.com/search?q=facebook
+// 주소로 개떡같이 입력해도 알아서 수정해주고, 규격외면 입력내용으로 구글검색.
 function upgradeURL(uri, searchEngine = 'google') {
     const isURL = uri.split(' ').length === 1 && uri.includes('.');
     if (isURL) {
@@ -45,7 +43,6 @@ function upgradeURL(uri, searchEngine = 'google') {
         }
         return uri;
     }
-    // search for the text in the search engine
     const encodedURI = encodeURI(uri);
     return searchEngines[searchEngine](encodedURI);
 }
@@ -57,6 +54,8 @@ const injectedJavaScript = `
 `;
 
 //비밀모드 관련 코드가 있음. 건들기 귀찮으니 걍 비밀모드 버튼만 없애자.
+// 모벡스를 사용할 클래스의 바로 윗줄에 옵져버 데코레이터를 붙인다.
+@observer
 class Browser extends Component {
     state = {
         currentURL: url,
@@ -78,83 +77,48 @@ class Browser extends Component {
         }
     };
 
-    // 비밀모드 돌입 함수...없다 생각하자
-    // get the configuration, this allows us to change
-    get config() {
-        const {incognito, config} = this.state;
-        if (incognito) {
-            return {
-                ...config,
-                allowStorage: false,
-                allowCookies: false,
-                allowLocation: false,
-                allowCaching: false,
-            }
-        }
-        return config;
-    }
-    // toggle incognito mode
-    toggleIncognito = () => {
-        this.setState({
-            incognito: !this.state.incognito
-        });
-        this.reload()
-    };
-
-    // 텍스트 입력창의 텍스트를 주소로 연결 
+    // 텍스트 입력창의 텍스트를 주소로 연결하는 함수
     loadURL = () => {
-        // 스테이트의 주소텍스트를 가져오고, 기본검색엔진도 가져온다.
-        // 새로운주소 값으로 가져온것들을 조합
+        // 스테이트에서 설정값, 첫화면주소, 기본검색엔진을 가져온다. 주소가 이상하면 개선하는 함수거쳐서 주소값 반환받는다.
         const {config, urlText} = this.state;
         const { defaultSearchEngine } = config;
-        // 앞에서 다룬, 텍스트에 공백이 있는지, '.'을 포함하는지 등을 체크하여 적합한 주소 혹은 검색창직행을 반환
         const newURL = upgradeURL(urlText, defaultSearchEngine);
-
-        // 반환된 값을 현재주소와 주소창 텍스트로 덮기.
+        
+        // 반환된 주소값을 기존 주소값에 덮씌
         this.setState({
             currentURL: newURL,
             urlText: newURL
         });
 
-        //키보드 입력모드 해제
         Keyboard.dismiss();
     };
 
-    // 주소창에 입력된 텍스트를 스테이트의 주소창텍스트에 덮기.
+    // 주소창에 입력된 텍스트를 스테이트의 주소창텍스트에 덮기 함수.
     updateUrlText = (text) => {
         this.setState({
             urlText: text
         });
     };
 
-    //앞으로, 뒤로 기능 함수는 내버려두자
-    // go to the next page
+    //앞으로, 뒤로, 새로고침 기능 함수. 내버려두자.
     goForward = () => {
         if (browserRef && this.state.canGoForward) {
             browserRef.goForward();
-        }
-    };
-
-    // go back to the last page
+        }    };
     goBack = () => {
         if (browserRef && this.state.canGoBack) {
             browserRef.goBack();
-        }
-    };
-
-    // reload the page
+        }    };
     reload = () => {
         if (browserRef) {
             browserRef.reload();
-        }
-    };
+        }    };
 
     // set the reference for the browser
     setBrowserRef = (browser) => {
         if (!browserRef) {
             browserRef = browser
-        }
-    };
+        }    };
 
     // called when there is an error in the browser
     onBrowserError = (syntheticEvent) => {
@@ -162,28 +126,32 @@ class Browser extends Component {
         console.warn('WebView error: ', nativeEvent)
     };
 
-    // called when the webview is loaded
+    // 웹뷰가 로드되거나 페이지가 로드된 경우의 시행함수들. 현재상태를 반영한 상태값[앞뒤이동가능여부, 타이틀]을 스테이트에 덮씌.
     onBrowserLoad = (syntheticEvent) => {
-        const {canGoForward, canGoBack, title} = syntheticEvent.nativeEvent;
+        const { canGoForward, canGoBack, title} = syntheticEvent.nativeEvent;
         this.setState({
             canGoForward,
             canGoBack,
             title
         })
     };
-
-    // called when the navigation state changes (page load)
     onNavigationStateChange = (navState) => {
         const {canGoForward, canGoBack, title} = navState;
         this.setState({
             canGoForward,
             canGoBack,
             title
-        })
+        })    
     };
 
-    // can prevent requests from fulfilling, good to log requests
-    // or filter ads and adult content.
+    // 원래 위의 네비게이션스테이트체인지를 통해서 주소변경을 감지하지만 어쩌선지 안되서 이걸로 대신 댐빵....
+    onLoadProgress = (syntheticEvent) => {
+        const { nativeEvent } = syntheticEvent;
+        TextStore.UrlForFetching(nativeEvent.url)
+        console.log(TextStore.UrlForFetch)
+        console.log('작동완료')
+    }
+    
     filterRequest = (request) => {
         return true;
     };
@@ -198,6 +166,15 @@ class Browser extends Component {
     render() {
         const {config, state} = this;
         const {currentURL, urlText, canGoForward, canGoBack, title, incognito} = state;
+
+        //TextStore.UrlForFetching(currentURL)
+        // 작동안한다...여기가 아닌듯. 다른곳에서 구현 ㄱㄱ
+        // const {currentURL} = this.state
+        // TextStore.UrlForFetching(currentURL)
+        // console.log(currentURL + '커런트유알엘')
+        // console.log(TextStore.UrlForFetch + '스토어에 저장된 주소')
+
+        
         return (
             <View style={styles.root}>
                 <View style={styles.browserContainer}>
@@ -212,13 +189,8 @@ class Browser extends Component {
                         renderLoading={() => <ActivityIndicator size="large" color="#0000ff" /> }
                         onShouldStartLoadWithRequest={this.filterRequest}
                         onMessage={this.onBrowserMessage}
-                        dataDetectorTypes={config.detectorTypes}
-                        thirdPartyCookiesEnabled={config.allowCookies}
-                        domStorageEnabled={config.allowStorage}
-                        javaScriptEnabled={config.allowJavascript}
-                        geolocationEnabled={config.allowLocation}
-                        cacheEnabled={config.allowCaching}
                         injectedJavaScript={injectedJavaScript}
+                        onLoadProgress={this.onLoadProgress}
                     />
                 </View>
             </View>
