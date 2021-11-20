@@ -18,6 +18,7 @@
     "cheerio": "^1.0.0-rc.5",
     "expo": "^40.0.1",
     "expo-checkbox": "^1.0.2",
+    "expo-cli": "^4.2.1",
     "expo-speech": "^8.5.0",
     "expo-status-bar": "~1.0.3",
     "mobx": "^6.0.4",

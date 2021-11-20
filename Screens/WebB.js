@@ -162,11 +162,11 @@ class Browser extends Component {
         TextStore.UrlForFetching(nativeEvent.url)
         console.log('주소변경 감지 ' + nativeEvent.url)
         console.log(this.state.Url)
-        if (nativeEvent.Url){
-            if (!(nativeEvent.Url == this.state.Url)) {
+        if (nativeEvent.url){
+            if (!(nativeEvent.url == this.state.Url)) {
             console.log("주소차이 발생 감지")
-            this.getDataFromUrl(nativeEvent.Url)
-            this.setState({Url : nativeEvent.Url})
+            this.getDataFromUrl(nativeEvent.url)
+            this.setState({Url : nativeEvent.url})
             }
         }
     }
