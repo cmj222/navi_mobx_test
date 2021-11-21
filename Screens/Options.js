@@ -72,7 +72,7 @@ export default class TextEditor extends React.Component {
           this.setState({ ttsStatus: "initialized", text:'실패다' });
       }
   };
-
+  //흠...브런치라....
   // readText라는 문구를 눌렀을때 발동. 이전의 재생을 멈추고 텍스트창의 텍스트를 읽는다.
   readText = async () => {
     Speech.stop()
