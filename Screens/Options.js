@@ -31,17 +31,19 @@ export default class TextEditor extends React.Component {
 
   //이 페이지가 로딩되면 아래의 함수를 시행하여 사용가능한 음성 모으게함.
   componentDidMount(){
+    console.log("옵션페이지 콤포넌트마운트 개시!")
     this.initTts()
   }
 
   initTts = async () => {
+      console.log("옵션화면 시작과정 개시")
       // 사용가능한 음성들을 구하고 voices에 반환한다.
       const voices = await Speech.getAvailableVoicesAsync();
       
       // 이런 음성들을 음성마다 네트워크연결이 불필요한지? 설치가 완료되었는지?로 필터링하고
       // 추가로 v.language=="ko-KR" 를 붙여서 한국어인 음성만 가져온다.
       // 필터링한 요소마다 음성의 아이디, 이름, '사용가능음성'으로 오브젝트화하여 리턴한다.
-      const availableVoices = voices
+      const availableVoices = await voices
           .filter(v => !v.networkConnectionRequired && !v.notInstalled && v.language=="ko-KR" )
           .map(v => {
           return { id: v.identifier, name: v.name, language: v.language };

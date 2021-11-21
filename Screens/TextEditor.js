@@ -17,10 +17,12 @@ export default class TextEditor extends React.Component {
         TextFromWeb : '', //
         isLoading: true,
         //Url: TextStore.UrlForFetch,
-		// 전쟁. 20개 이상항목 https://namu.wiki/w/%EC%A0%84%EC%9F%81
-		// 트루먼 독트린. 적당한 길이와 각 홍목의 분량 https://namu.wiki/w/%ED%8A%B8%EB%A3%A8%EB%A8%BC%20%EB%8F%85%ED%8A%B8%EB%A6%B0
+		// 전쟁. 20개 이상항목 
+		// https://namu.wiki/w/%EC%A0%84%EC%9F%81
+		// 트루먼 독트린. 적당한 길이와 각 홍목의 분량 
+		//https://namu.wiki/w/%ED%8A%B8%EB%A3%A8%EB%A8%BC%20%EB%8F%85%ED%8A%B8%EB%A6%B0
 		Url : 'https://namu.wiki/w/%EC%A0%84%EC%9F%81', 
-		//실험에 쓸만한 임시주소. 나중에 TextStore.UrlForFetch 로 바꾸기.
+		//실험에 쓸만한 임시주소.[전쟁] 나중에 TextStore.UrlForFetch 로 바꾸기.
         InputText : '',
 		
 		// 데이터 구조관련 변수

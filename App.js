@@ -19,10 +19,10 @@ Stack = createStackNavigator();
 
 export default class App extends React.Component {
 
-  // 일단 최상단 클래스에서 스토어 구현은 포기하자...각 화면을 나타내는 클래스로 가서 구현해보자...
+  // 일단 최상단 클래스에서 스토어 구현은 포기하자...
+  //각 화면을 나타내는 클래스로 가서 구현해보자...
   // TextStore =this.props
  
-
   // test1() {
   //   TextStore.addUser('모벡스 테스트용 저장 스트링')
   // }
@@ -69,9 +69,10 @@ export default class App extends React.Component {
             ),
             headerBackTitleVisible: false,
             headerBackAccessibilityLabel: false})}>
-          <Stack.Screen name="Options" component={Options} />
+          
           <Stack.Screen name="WebB" component={WebB}  />
           <Stack.Screen name="TextEditor" component={TextEditor} />
+          <Stack.Screen name="Options" component={Options} />
           
         </Stack.Navigator>
       </NavigationContainer>

@@ -32,7 +32,7 @@ class TextStore {
   @action.bound
   ST_set_selecedVoice(voice) {
     this.selectedVoice = voice
-    console.log(voice)
+    console.log("텍스트스토어상의 선택된음성은 다음과 같음 : " + voice)
   }
 
   @action.bound

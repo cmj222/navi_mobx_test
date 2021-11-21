@@ -94,7 +94,8 @@ class Browser extends Component {
 		// 읽기관련 변수
 		TextToSpeech : '', //읽을 최종 결과물
 		selectedVoice : '', 
-		language : 'ko-KR', 
+		language : 'ko-KR',
+		//이거 최초 값이 있던가???
 		speechRate : TextStore.speechRate,
 		speechPitch : TextStore.speechPitch,
 		isPlaying : false,
@@ -335,7 +336,10 @@ class Browser extends Component {
 			} 
 			Speech.speak(
 				this.state.wiki_data[chapter_reading][content_reading].text, {
-					rate : this.state.speechRate, onDone : this.play_next
+					rate : this.state.speechRate, 
+					pitch: this.state.speechPitch,
+					voice: this.state.selectedVoice,
+					onDone : this.play_next
 				}
 		)
 		} else {
@@ -475,6 +479,7 @@ class Browser extends Component {
 		//현재의 url을 모벡스에 추가.
 	}
 
+	//내부에서 즉각으로 속도 조절하는 옵션 띄우기...하지말자.
 	setSpeechRate = async rate => {
 		this.setState({ speechRate: rate });
 	};
@@ -491,9 +496,10 @@ class Browser extends Component {
                 size={48} color="black" onPress={() => this.play(this.state.chapter_reading,this.state.content_reading)} />
                 <AntDesign name="caretright" size={48} color="black"onPress={() => this.next_content()} />
                 <AntDesign name="forward" size={48} color="black" onPress={() => this.next_chapter()}/>
-                <AntDesign name="plussquareo" size={48} color="black" onPress={() => this.add_this_page()}/>
-                <AntDesign name="setting" size={48} color="black" onPress={() => this.props.navigation.navigate('Options')}/>
-            </View>
+                <AntDesign name="plussquareo" size={48} color="black" onPress={() => this.add_this_page()}/>            
+			</View>
+			//옵션창 이동 안하고 즉석 옵션은 걍 포기하자
+			//<AntDesign name="setting" size={48} color="black" onPress={() => this.props.navigation.navigate('Options')}/>
         const Console_before_Loading = 
             <View style={{ justifyContent: 'center',alignItems: 'center'}}>
                 <Text>로딩중. 나중에 로딩아이콘으로 체인지.</Text>
