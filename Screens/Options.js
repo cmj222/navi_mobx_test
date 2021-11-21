@@ -21,7 +21,8 @@ export default class TextEditor extends React.Component {
       speechRate: TextStore.speechRate,
       speechPitch: TextStore.speechPith,
 
-      ttsStatus: "initiliazing", // tts의 이벤트를 체크해서 시작중, 시작됨, 끝남, 취소됨 중 하나를 넣게함.
+      // tts의 이벤트를 체크해서 시작중, 시작됨, 끝남, 취소됨 중 하나를 넣게함.
+      ttsStatus: "initiliazing", 
       isLoading: true,
       text: "테스트 텍스트입니다.",
 
@@ -31,7 +32,7 @@ export default class TextEditor extends React.Component {
 
   //이 페이지가 로딩되면 아래의 함수를 시행하여 사용가능한 음성 모으게함.
   componentDidMount(){
-    this.initTts()
+    //this.initTts()
   }
 
   initTts = async () => {
@@ -66,13 +67,13 @@ export default class TextEditor extends React.Component {
         console.log("보이스선택완료")
         TextStore.ST_set_selecedVoice(this.state.selectedVoice)
         this.setState({isLoading:false})
+
       // 만약 추출할 음성 자체가 없다면...어쨋든 걍 시작됨으로 바꿔라.
       } else {
         console.log("적합한 음성이 없음")
           this.setState({ ttsStatus: "initialized", text:'실패다' });
       }
   };
-  //흠...브런치라....
   // readText라는 문구를 눌렀을때 발동. 이전의 재생을 멈추고 텍스트창의 텍스트를 읽는다.
   readText = async () => {
     Speech.stop()
@@ -157,12 +158,12 @@ export default class TextEditor extends React.Component {
               onSlidingComplete={this.setSpeechPitch}
               />
           </View>
-          <FlatList
+          {/* <FlatList
             keyExtractor={item => item.id}
             renderItem={this.renderVoiceItem}
             extraData={this.state.selectedVoice}
             data={this.state.voices}
-          />
+          /> */}
           <View style={styles.sliderContainer}>
           <Button title={`테스트 음성 듣기`} onPress={this.readText} />
           <Button title={'설정저장하기'} />

@@ -37,8 +37,9 @@ let browserRef = null;
 
 // 여러 검색엔진용 코드 있지만 생략해버림
 const searchEngines = {
-    'google': (uri) => `https://www.google.com/search?q=${uri}`,
+    'google': (uri) => `https://www.google.com/search?q=${uri}`
 };
+
 
 // 주소로 개떡같이 입력해도 알아서 수정해주고, 규격외면 입력내용으로 구글검색.
 function upgradeURL(uri, searchEngine = 'google') {
@@ -53,13 +54,14 @@ function upgradeURL(uri, searchEngine = 'google') {
     return searchEngines[searchEngine](encodedURI);
 }
 
-// javascript to inject into the window
+// javascript to inject into the window 뭔진 몰라도 냅두자...
 const injectedJavaScript = `
       window.ReactNativeWebView.postMessage('injected javascript works!');
       true; // note: this is required, or you'll sometimes get silent failures   
 `;
 
-//비밀모드 관련 코드가 있음. 건들기 귀찮으니 걍 비밀모드 버튼만 없애자.
+//비밀모드 관련 코드가 있음. 건들기 귀찮으니 걍 비밀모드 버튼 없애자.
+
 // 모벡스를 사용할 클래스의 바로 윗줄에 옵져버 데코레이터를 붙인다.
 @observer
 class Browser extends Component {
@@ -94,7 +96,8 @@ class Browser extends Component {
 		// 읽기관련 변수
 		TextToSpeech : '', //읽을 최종 결과물
 		selectedVoice : '', 
-		language : 'ko-KR', 
+		language : 'ko-KR',
+		//이거 최초 값이 있던가???
 		speechRate : TextStore.speechRate,
 		speechPitch : TextStore.speechPitch,
 		isPlaying : false,
@@ -160,13 +163,25 @@ class Browser extends Component {
     onLoadProgress = (syntheticEvent) => {
         const { nativeEvent } = syntheticEvent;
         TextStore.UrlForFetching(nativeEvent.url)
-        console.log('주소변경 감지 ' + nativeEvent.url)
-        console.log(this.state.Url)
         if (nativeEvent.url){
             if (!(nativeEvent.url == this.state.Url)) {
-            console.log("주소차이 발생 감지")
-            this.getDataFromUrl(nativeEvent.url)
-            this.setState({Url : nativeEvent.url})
+				console.log("주소차이 발생 감지")
+				console.log('주소변경 감지. 변경된 주소는 : ' + nativeEvent.url + 
+				"스테이트에 저장된 Url 변수는 : " + this.state.Url)
+
+				const Url = nativeEvent.url
+				this.getDataFromUrl(nativeEvent.url)
+				this.setState({
+					Url : nativeEvent.url, 
+					content_index : 0, 
+					footnote_index : 1,
+					chapter_reading : 0,
+					content_reading : 0,
+					isPlaying:false
+				})
+				Speech.stop()
+				//읽기 지표 초기화 및 재생 중지
+				
             }
         }
     }
@@ -184,10 +199,12 @@ class Browser extends Component {
 
     // 페이지 로딩 후 자료처리 구간
     componentDidMount() {
-        console.log(this.state.Url)
+		//스테이트의 Url을 상수로 받아서 전 함수에서 사용할 인수로 공용처리하려는 듯.
         const {Url} = this.state
 		this.getDataFromUrl(Url)
     }
+
+
     getDataFromUrl = async (Url) => {
 		var wiki_footnote_array = await this.getAxios(Url) // [제목, 컨텐츠]들로 이뤄진 자료를 반환.
 		var wiki = wiki_footnote_array[0]
@@ -328,14 +345,17 @@ class Browser extends Component {
 		if (!this.state.isPlaying){
 			this.setState({isPlaying:true})	
 			Speech.stop()
-			console.log("챕터길이는 " + this.state.chapter_length)
+			console.log("재생버튼 작동함. 챕터길이는 " + this.state.chapter_length)
 			if (this.state.chapter_length == 0){
 				console.log("챕터길이가 0이니 아래에서 브레이크")
 				return false
 			} 
 			Speech.speak(
 				this.state.wiki_data[chapter_reading][content_reading].text, {
-					rate : this.state.speechRate, onDone : this.play_next
+					rate : this.state.speechRate, 
+					pitch: this.state.speechPitch,
+					voice: this.state.selectedVoice,
+					onDone : this.play_next
 				}
 		)
 		} else {
@@ -475,6 +495,7 @@ class Browser extends Component {
 		//현재의 url을 모벡스에 추가.
 	}
 
+	//내부에서 즉각으로 속도 조절하는 옵션 띄우기...하지말자.
 	setSpeechRate = async rate => {
 		this.setState({ speechRate: rate });
 	};
@@ -491,9 +512,11 @@ class Browser extends Component {
                 size={48} color="black" onPress={() => this.play(this.state.chapter_reading,this.state.content_reading)} />
                 <AntDesign name="caretright" size={48} color="black"onPress={() => this.next_content()} />
                 <AntDesign name="forward" size={48} color="black" onPress={() => this.next_chapter()}/>
-                <AntDesign name="plussquareo" size={48} color="black" onPress={() => this.add_this_page()}/>
-                <AntDesign name="setting" size={48} color="black" onPress={() => this.props.navigation.navigate('Options')}/>
-            </View>
+                <AntDesign name="plussquareo" size={48} color="black" onPress={() => this.add_this_page()}/>            
+				<AntDesign name="setting" size={48} color="black" onPress={() => this.props.navigation.navigate('Options')}/>
+			</View>
+		
+			
         const Console_before_Loading = 
             <View style={{ justifyContent: 'center',alignItems: 'center'}}>
                 <Text>로딩중. 나중에 로딩아이콘으로 체인지.</Text>
