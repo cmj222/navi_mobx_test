@@ -42,7 +42,20 @@ class TextStore {
     console.log(this.speechRate)
   }
 
+  @action.bound
+  ST_setSpeechPitch(rate) {
+    this.speechPith = rate
+    console.log(rate)
+    console.log(this.speechPith)
+  }
 
+  @action.bound
+  ST_saveVoiceOpt(test1) {
+    this.selectedVoice = test1[0]
+    this.speechPith = test1[1]
+    this.speechRate = test1[2]
+    console.log(this.selectedVoice)
+  }
 
 
 }

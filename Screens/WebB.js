@@ -352,9 +352,9 @@ class Browser extends Component {
 			} 
 			Speech.speak(
 				this.state.wiki_data[chapter_reading][content_reading].text, {
-					rate : this.state.speechRate, 
-					pitch: this.state.speechPitch,
-					voice: this.state.selectedVoice,
+					rate : TextStore.speechRate, 
+					pitch: TextStore.speechPitch,
+					voice: TextStore.selectedVoice,
 					onDone : this.play_next
 				}
 		)
@@ -398,7 +398,11 @@ class Browser extends Component {
 		console.log("스피크 하기 직전의 챕터리딩과 콘텐츠리딩은 " + chapter_reading + "과 " + content_reading)
 		if (this.state.isPlaying){
 			Speech.speak(
-				this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
+				this.state.wiki_data[chapter_reading][content_reading].text, 
+				{	
+					rate : TextStore.speechRate, 
+					pitch: TextStore.speechPitch,
+					voice: TextStore.selectedVoice,
 					onDone : this.play_next
 				}
 			)
@@ -422,7 +426,11 @@ class Browser extends Component {
 		this.setState({chapter_reading : chapter_reading, content_reading : content_reading})
 		if (this.state.isPlaying){
 			Speech.speak(
-				this.state.wiki_data[chapter_reading][content_reading].text, {	rate : this.state.speechRate, 
+				this.state.wiki_data[chapter_reading][content_reading].text, 
+				{	
+					rate : TextStore.speechRate, 
+					pitch: TextStore.speechPitch,
+					voice: TextStore.selectedVoice,
 					onDone : this.play_next
 				}
 			)
@@ -464,8 +472,12 @@ class Browser extends Component {
 		//this.play(chapter_reading, 0)
 		if (this.state.isPlaying){
 		Speech.speak(
-			this.state.wiki_data[chapter_reading][0].text, {
-				rate : this.state.speechRate, onDone : this.play_next
+			this.state.wiki_data[chapter_reading][0].text, 
+			{
+				rate : TextStore.speechRate, 
+				pitch: TextStore.speechPitch,
+				voice: TextStore.selectedVoice,
+				onDone : this.play_next
 			})}
 	}
 	before_chapter = async () => {
@@ -486,8 +498,12 @@ class Browser extends Component {
 		this.setState({chapter_reading : chapter_reading, content_reading : 0})
 		if (this.state.isPlaying){
 			Speech.speak(
-				this.state.wiki_data[chapter_reading][0].text, {
-					rate : this.state.speechRate, onDone : this.play_next
+				this.state.wiki_data[chapter_reading][0].text, 
+				{
+					rate : TextStore.speechRate, 
+					pitch: TextStore.speechPitch,
+					voice: TextStore.selectedVoice,
+					onDone : this.play_next
 				})}
 	}
 	
@@ -512,9 +528,10 @@ class Browser extends Component {
                 size={48} color="black" onPress={() => this.play(this.state.chapter_reading,this.state.content_reading)} />
                 <AntDesign name="caretright" size={48} color="black"onPress={() => this.next_content()} />
                 <AntDesign name="forward" size={48} color="black" onPress={() => this.next_chapter()}/>
-                <AntDesign name="plussquareo" size={48} color="black" onPress={() => this.add_this_page()}/>            
+                
 				<AntDesign name="setting" size={48} color="black" onPress={() => this.props.navigation.navigate('Options')}/>
 			</View>
+			//<AntDesign name="plussquareo" size={48} color="black" onPress={() => this.add_this_page()}/>            
 		
 			
         const Console_before_Loading = 

@@ -32,7 +32,8 @@ export default class TextEditor extends React.Component {
 
   //이 페이지가 로딩되면 아래의 함수를 시행하여 사용가능한 음성 모으게함.
   componentDidMount(){
-    //this.initTts()
+    this.initTts()
+    //시발
   }
 
   initTts = async () => {
@@ -71,7 +72,8 @@ export default class TextEditor extends React.Component {
       // 만약 추출할 음성 자체가 없다면...어쨋든 걍 시작됨으로 바꿔라.
       } else {
         console.log("적합한 음성이 없음")
-          this.setState({ ttsStatus: "initialized", text:'실패다' });
+        this.setState({ ttsStatus: "initialized", text:'실패다' });
+        setTimeout(() => { this.initTts() }, 1000);
       }
   };
   // readText라는 문구를 눌렀을때 발동. 이전의 재생을 멈추고 텍스트창의 텍스트를 읽는다.
@@ -85,6 +87,16 @@ export default class TextEditor extends React.Component {
         pitch: this.state.speechPitch
       }    )
   };
+
+  // 설정자장하기 버튼을 눌렀을때 발동. 현재 스테이트의 셀렉티트보이스와 랭귀지와 속도와 높이를
+  // 가져다가 글로벌 스토리지에 넣는다...
+  saveVoiceOpt = async () => {
+    const test1 = [this.state.selectedVoice,
+      this.state.speechPitch,
+      this.state.speechRate]
+    console.log(test1)
+    TextStore.ST_saveVoiceOpt(test1)
+  }
 
   //주어진 시간에 몇 단어? = 스피드, 템포
   // rate라는 인수를 받아서 설정하는 메소드 시행하고, 현재의 스테이트에 반영.
@@ -104,6 +116,8 @@ export default class TextEditor extends React.Component {
   onVoicePress = async voice => {
     this.setState({ selectedVoice: voice.id});
   };
+
+  
 
   //선택가능한 음성들로 리스트 만들기.
   renderVoiceItem = ({ item }) => {
@@ -158,31 +172,28 @@ export default class TextEditor extends React.Component {
               onSlidingComplete={this.setSpeechPitch}
               />
           </View>
-          {/* <FlatList
+          <FlatList
             keyExtractor={item => item.id}
             renderItem={this.renderVoiceItem}
             extraData={this.state.selectedVoice}
             data={this.state.voices}
-          /> */}
+          />
           <View style={styles.sliderContainer}>
           <Button title={`테스트 음성 듣기`} onPress={this.readText} />
-          <Button title={'설정저장하기'} />
+          <Button title={'설정저장하기'} onPress={this.saveVoiceOpt}/>
+          <Button title={'브라우저로 복귀'} onPress={() => this.props.navigation.navigate('WebB')}/>
           </View>
 
-          <View style={styles.sliderContainer}>
+          {/* <View style={styles.sliderContainer}>
             <Checkbox value={this.state.footnote_OnOff} onValueChange={this.setChecked} />
             <Text>체크박스 옆 텍스트</Text>
           </View>
-
-          <Button title="스토어내용 콘솔로그" onPress={()=>console.log(TextStore.footnote_Checked)}/>
-
-          
         
           <View style={{ flex: 0.3, alignItems: 'center', justifyContent: 'center' }}>
             <Button title="텍스트에디터로" onPress={() => this.props.navigation.navigate('TextEditor')} />
             <Button title="옵션스크린에서 옵션이라 저장하기" onPress={() => TextStore.addUser('옵션스크린')} />
             <Button title="옵션스크린에서 읽어내기" onPress={() => console.log('스토어밸류는 ' + TextStore.TextAtoB)} />
-          </View>
+          </View> */}
         </View>
         )
     } else {
