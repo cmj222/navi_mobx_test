@@ -28,6 +28,7 @@ class TextStore {
   @observable selectedVoice = null
   @observable speechRate = 1
   @observable speechPith = 1
+  @observable saveVoice = false
 
   @action.bound
   ST_set_selecedVoice(voice) {
@@ -54,7 +55,8 @@ class TextStore {
     this.selectedVoice = test1[0]
     this.speechPith = test1[1]
     this.speechRate = test1[2]
-    console.log(this.selectedVoice)
+    this.saveVoice = test1[3]
+    console.log(this.selectedVoice + this.saveVoice)
   }
 
 

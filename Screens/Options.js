@@ -20,6 +20,7 @@ export default class TextEditor extends React.Component {
       language : 'kr',
       speechRate: TextStore.speechRate,
       speechPitch: TextStore.speechPith,
+      haveVoice: TextStore.haveVoice,
 
       // tts의 이벤트를 체크해서 시작중, 시작됨, 끝남, 취소됨 중 하나를 넣게함.
       ttsStatus: "initiliazing", 
@@ -33,10 +34,10 @@ export default class TextEditor extends React.Component {
   //이 페이지가 로딩되면 아래의 함수를 시행하여 사용가능한 음성 모으게함.
   componentDidMount(){
     this.initTts()
-    //시발
-  }
+    }
 
   initTts = async () => {
+      console.log(TextStore.saveVoice)
       // 사용가능한 음성들을 구하고 voices에 반환한다.
       const voices = await Speech.getAvailableVoicesAsync();
       
@@ -48,13 +49,18 @@ export default class TextEditor extends React.Component {
           .map(v => {
           return { id: v.identifier, name: v.name, language: v.language };
           });
-      console.log(availableVoices)
-      // 선택된음성을 초기화시킨다.    
+      //console.log(availableVoices)
+      
+      // 만약 스토어에 저장되어 있는 음성이 있다면 선택된음성을
+      //스토어에서 가져온다. 아니라면 선택된음성의 값을 null로
       let selectedVoice = null;
-      // 만약 사용가능한 음성들이 있다면...
+
+      
       if (availableVoices && availableVoices.length > 0) {
           // 그 중 첫번째놈의 아이디를 선택된음성으로 지정.
-          selectedVoice = availableVoices[0].id
+          //selectedVoice = availableVoices[0].id
+          //점검대상//이놈때문에 옵션으로 올때마다 음성이 초기화되나?
+          //이 구문이 없어도 알아서 목소리 기본은 세팅될듯????
           
           // 이후 필터링거친 사용가능음성들을 스테이트.사용가능음성들에,
           // 선택된 음성을 스테이트.선택된음성에 덮씌운다.
@@ -65,8 +71,15 @@ export default class TextEditor extends React.Component {
               ttsStatus: "initialized",
               text: '보이스 세팅 완료'
           });
-        console.log("보이스선택완료")
+        console.log("마운트로 보이스목록화 완료")
+        if (TextStore.saveVoice) {
+          selectedVoice = TextStore.selectedVoice
+          console.log("스토어에 저장음성이 참이니 가져옴.")
+        } else {
         TextStore.ST_set_selecedVoice(this.state.selectedVoice)
+        console.log("스토어에 저장음성이 거짓이니 초기화시킴.")
+        }
+
         this.setState({isLoading:false})
 
       // 만약 추출할 음성 자체가 없다면...어쨋든 걍 시작됨으로 바꿔라.
@@ -91,11 +104,15 @@ export default class TextEditor extends React.Component {
   // 설정자장하기 버튼을 눌렀을때 발동. 현재 스테이트의 셀렉티트보이스와 랭귀지와 속도와 높이를
   // 가져다가 글로벌 스토리지에 넣는다...
   saveVoiceOpt = async () => {
+    //this.setState({haveVoice : true})
     const test1 = [this.state.selectedVoice,
       this.state.speechPitch,
-      this.state.speechRate]
+      this.state.speechRate,
+      true
+    ]
     console.log(test1)
     TextStore.ST_saveVoiceOpt(test1)
+    console.log(TextStore.saveVoice)
   }
 
   //주어진 시간에 몇 단어? = 스피드, 템포
