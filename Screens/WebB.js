@@ -97,12 +97,13 @@ class Browser extends Component {
 
 		wiki_data : {},
         content_index : 0, // 제목 포함한 본문 요소들의 순번용
-		footnote_index  : 1, // 여러 챕터 전체에 걸친 주석과 연결될 번호. [1] 부터 시작이니 초기값은 1로. 
+		footnote_index  : 1, // 여러 챕터 전체에 걸친 주석과 연결될 번호. [1] 부터 시작이니 초기값은 1로.
 		// 아니다...본문 이전에 주석이 등장하는 경우 [1]부터 시작이 아닐 수 있다.
 		// 이걸 적절한 초기값으로 주는게 핵심인가?
 		// 문장을 [풋노트_인덱스]포함여부로 주석여부를 체크한다...만약 본문이[3]부터 시작한다면, [1]로 검색하니 
 		// 주석이 없다고 생각한다...그러니 본문을 검색해서 [1]이 있나 체크하고 있다면 패스...없다면 풋노트인덱스++하고 재검색,
 		// 없으면 다시 재검색...반복해서 적절한 풋노트인덱스를 찾은 뒤에 이를 반환하는 식을 만들어야 한다.
+		know_footnote_index : false,
 
 		// 읽기관련 변수
 		TextToSpeech : '', //읽을 최종 결과물
@@ -327,25 +328,30 @@ class Browser extends Component {
 			// . 으로 나눠진 요소들[문장]의 어레이오브컨텐츠. 0부터 시작하는 인덱스와 크기비교하며 반복.
 			var element_array = array_of_contents[index_array_of_contents]
 			// 어레이의 요소[하나의문장]. 몇번째 문장 하나를 지칭.
-			var footnote_index = this.state.footnote_index // 전 챕터에 걸쳐 있을 주석에 대한 번호. [1]부터 시작해야하니 최초값 1
-			var footnote_string = "["+String(footnote_index)+"]" // 최초의 경우에는 "[1]"
+
 			var after_footnote = "" // 한 문장에 여러 주석이 있는 경우 뒤에 남는 문장도 다시 여러번 자르는 과정 필요. 이때 돌려가며 사용될 변수
 			
 
+			
+			if (!this.state.know_footnote_index){
+				if (reg.test(element_array)){
+					let test1 = element_array.match(reg)[0]
+					test1 = new String(test1)
+					test1.replace("[","")
+					test1.replace("]","")
+					test1 = test1[1]
+					this.setState({footnote_index : test1})
+					this.setState({know_footnote_index : true})
+					console.log("풋노트인덱스는.." + this.state.footnote_index)
+					console.log(test1)
+					//4와 5를 반환한다....이제 스테이트에 참거짓 변수하나 놓고, 거짓상태면 매번 이짓하게 하자..
+				}
+				//console.log("풋노트인덱스는.." + this.state.footnote_index)
+			}
+			var footnote_index = this.state.footnote_index // 전 챕터에 걸쳐 있을 주석에 대한 번호. [1]부터 시작해야하니 최초값 1
+			var footnote_string = "["+String(footnote_index)+"]" // 최초의 경우에는 "[1]"
 			var footnote_text = footnote_data[footnote_index].text //풋노트_데이터에 주석자료들...이걸 위키_데이터에 적절한 위치에 삽입
 
-			//if (element_array.includes(reg)){
-			if (reg.test(element_array)){
-				var test1 = element_array.match(reg)[0]
-				for (let key in this.state.footnote_data){
-					console.log(key[text])
-					if (key.footnote_string == test1){
-						console.log(test1)
-					}
-				}
-				console.log(test1)
-			}
-			//무조건 리스트로 반환한다...하나라도. 그러니 뒤에 [0]을 붙이자.
 
 			//만약 문장에 [1]이 없다면 주석없는 문장이니 통채로 오브젝트화하여 반영. 반복문 처음으로 되돌아감.
 			if (!element_array.includes(footnote_string)){
