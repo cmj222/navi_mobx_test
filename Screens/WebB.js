@@ -88,11 +88,22 @@ class Browser extends Component {
         //여기서부터 텍스트에서 가져온것.
         isLoading: true,
         Url:'https://namu.wiki/w/%EB%82%98%EB%AC%B4%EC%9C%84%ED%82%A4',
-        wiki : {},
+        
+		//요소마다 { 인덱스0 : { "챕터1제목", "챕터1문장전체"}, 인덱스1 : { }와 같은 리스트가 될 예정
+		wiki : {},
+		// { 인덱스1 : {풋노트_스트링:[1],텍스트:"주석의텍스트"}, 인덱스2:{}...}과 같은 리스트가 될 예정.
+		footnote_data : {},
+		//...위의 둘을 담은 리스트를 getAxios(Url)을 통해서 리턴 받는다.
+
 		wiki_data : {},
         content_index : 0, // 제목 포함한 본문 요소들의 순번용
 		footnote_index  : 1, // 여러 챕터 전체에 걸친 주석과 연결될 번호. [1] 부터 시작이니 초기값은 1로. 
-		
+		// 아니다...본문 이전에 주석이 등장하는 경우 [1]부터 시작이 아닐 수 있다.
+		// 이걸 적절한 초기값으로 주는게 핵심인가?
+		// 문장을 [풋노트_인덱스]포함여부로 주석여부를 체크한다...만약 본문이[3]부터 시작한다면, [1]로 검색하니 
+		// 주석이 없다고 생각한다...그러니 본문을 검색해서 [1]이 있나 체크하고 있다면 패스...없다면 풋노트인덱스++하고 재검색,
+		// 없으면 다시 재검색...반복해서 적절한 풋노트인덱스를 찾은 뒤에 이를 반환하는 식을 만들어야 한다.
+
 		// 읽기관련 변수
 		TextToSpeech : '', //읽을 최종 결과물
 		selectedVoice : '', 
@@ -109,7 +120,7 @@ class Browser extends Component {
 		chapter_reading : 0,
 		content_reading : 0,
 		object_length : 0
-
+		
     };
 
 
@@ -225,36 +236,48 @@ class Browser extends Component {
         const response = await fetch(Url);   // fetch page
         const htmlString = await response.text() // get response text 
         const $ = cheerio.load(htmlString);           // parse HTML string
-		var wiki = {}                
+		var wiki = {}          
+		
+
+
+
         // ======이후 옵션의 체크에 따라서 적용이 될지 안될지를 결정하게 만들자======
         $(".wiki-macro-toc").remove()  //목차제거. 
         $('.wiki-edit-section').remove() // 항목별로 있는 [편집] 제거
         $('.wiki-folding').remove() // 테이블이 있는 경우 [펼치기,접기] 제거
         $('.wiki-table').remove() // 테이블 자체를 제거하는 코드. 이후 옵션으로 만들자.
 		// ==================================================================
-        $(".w").children().filter('.wiki-heading').each(function (index, element) {
-        wiki[index] = ['','']
-        wiki[index][0] = ($(element).text())
-        })
-        $(".w").children().filter('.wiki-heading-content').each(function (index, element) {
-        wiki[index][1] = ($(element).text())
-        })
 		
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
 		//=============================사전에 주석처리========================================
 		// 데이터 구조 돌입하기 전에 미리 주석에 대한 정리가 필요.
-		// 다음과 같을 것이다. {1 : { footnote_string: [1], text : "텍스트" }
+		// 다음과 같을 것이다. {1 : { footnote_string: [1], text : "텍스트" }  }		
 		var footnote_data = {}
-        $(".footnote-list").each(function (index, element) {
+		// $(".footnote-list").each(function (index, element) {
+		// 	console.log($(element).text())
+		// })
+		$(".footnote-list").each(function (index, element) {
 			var index_plus = index + 1
 			var index_string = '[' + String(index+1) + ']' // [1]
 			
 			var index_n_text = $(element).text() // [1] 이 당시에는 셀리카도 FR이었다.
 			var footnote_text = index_n_text.split(index_string)[1] // "이 당시에는 셀리카도 FR이었다."
-        	
+			
 			footnote_data[index_plus] = { footnote_string : index_string , text : footnote_text}
 		})
+		//=============================사전에 주석처리========================================
+		//=============================사전에 주석처리========================================
+		//=============================사전에 주석처리========================================
+
+		$(".w").children().filter('.wiki-heading').each(function (index, element) {
+			wiki[index] = ['','']
+			wiki[index][0] = ($(element).text())
+			})
+			$(".w").children().filter('.wiki-heading-content').each(function (index, element) {
+			wiki[index][1] = ($(element).text())
+		})
+
 		//this.setState({footnote_data:footnote_data, wiki:wiki})
 		return [wiki, footnote_data]
 	}
@@ -297,6 +320,8 @@ class Browser extends Component {
 		array_of_contents.pop() 
 		
 		// 이제 위 어레이의 각 요소[=문장]마다 주석여부를 체크.
+		var reg = /[[0-9]*]/
+		//console.log(footnote_data)
 
 		for (var index_array_of_contents = 0; index_array_of_contents <array_of_contents.length; index_array_of_contents++){
 			// . 으로 나눠진 요소들[문장]의 어레이오브컨텐츠. 0부터 시작하는 인덱스와 크기비교하며 반복.
@@ -304,9 +329,24 @@ class Browser extends Component {
 			// 어레이의 요소[하나의문장]. 몇번째 문장 하나를 지칭.
 			var footnote_index = this.state.footnote_index // 전 챕터에 걸쳐 있을 주석에 대한 번호. [1]부터 시작해야하니 최초값 1
 			var footnote_string = "["+String(footnote_index)+"]" // 최초의 경우에는 "[1]"
-			var footnote_text = footnote_data[footnote_index].text // 
 			var after_footnote = "" // 한 문장에 여러 주석이 있는 경우 뒤에 남는 문장도 다시 여러번 자르는 과정 필요. 이때 돌려가며 사용될 변수
 			
+
+			var footnote_text = footnote_data[footnote_index].text //풋노트_데이터에 주석자료들...이걸 위키_데이터에 적절한 위치에 삽입
+
+			//if (element_array.includes(reg)){
+			if (reg.test(element_array)){
+				var test1 = element_array.match(reg)[0]
+				for (let key in this.state.footnote_data){
+					console.log(key[text])
+					if (key.footnote_string == test1){
+						console.log(test1)
+					}
+				}
+				console.log(test1)
+			}
+			//무조건 리스트로 반환한다...하나라도. 그러니 뒤에 [0]을 붙이자.
+
 			//만약 문장에 [1]이 없다면 주석없는 문장이니 통채로 오브젝트화하여 반영. 반복문 처음으로 되돌아감.
 			if (!element_array.includes(footnote_string)){
 				wiki_data[chapter_index][content_index] = {type : "sentence", text : element_array}
@@ -320,7 +360,8 @@ class Browser extends Component {
 				footnote_index ++ // 이걸로 풋노트스트링도 변하면서 자동으로 [2]에 맞춘 루프구문이 시행될까...? 
 				// ㅇㅇ 된다.
 				content_index ++ // 주석도 컨텐츠의 번호 대상이니 추가해준다.
-				var split_sentnece = element_array.split(footnote_string) // 주석을 기준으로 문장을 나눈다. "그는 / [1] / 언제나[2] 그래왔다."
+				var split_sentnece = element_array.split(footnote_string) // 주석을 기준으로 문장을 나눈다. 
+				//"그는 / [1] / 언제나[2] 그래왔다."
 				after_footnote = split_sentnece[1] // 더이상 주석이 없을 때까지 계속 돌려질 값. 
 				element_array = split_sentnece[1] // 이제 뒤에 남은 문장이 체크대상이 된다. 
 				//[2]가 포함되었는지 체크하고 그를 기준으로 전자를 오브젝트화 및 병합한다.
