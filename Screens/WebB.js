@@ -324,6 +324,8 @@ class Browser extends Component {
 		var reg = /[[0-9]*]/
 		//console.log(footnote_data)
 
+
+
 		for (var index_array_of_contents = 0; index_array_of_contents <array_of_contents.length; index_array_of_contents++){
 			// . 으로 나눠진 요소들[문장]의 어레이오브컨텐츠. 0부터 시작하는 인덱스와 크기비교하며 반복.
 			var element_array = array_of_contents[index_array_of_contents]
@@ -331,25 +333,34 @@ class Browser extends Component {
 
 			var after_footnote = "" // 한 문장에 여러 주석이 있는 경우 뒤에 남는 문장도 다시 여러번 자르는 과정 필요. 이때 돌려가며 사용될 변수
 			
-
 			
 			if (!this.state.know_footnote_index){
+				//만약 주석번호아니?가 거짓이면...이는 첫 주석을 찾았을때 참을 반환케하여 그때부턴 작동 안하게 할것임
 				if (reg.test(element_array)){
-					let test1 = element_array.match(reg)[0]
+					//[숫자]정규식으로 문장 하나하나를 분석한다....
+					var test1 = element_array.match(reg)[0]
+					// 문장을 정규식으로 분석하여 일치한 놈들의 리스트의 첫번째놈을 test1이라 정한다.
 					test1 = new String(test1)
 					test1.replace("[","")
-					test1.replace("]","")
-					test1 = test1[1]
-					this.setState({footnote_index : test1})
-					this.setState({know_footnote_index : true})
+					test1.replace("]","")					
+					var test2 = parseInt(test1[1])
+					//괄호를 제거하여 숫자만 반환하게 다듬고 숫자로 취급하게 만든다.
+					this.state = {footnote_index : parseInt(test1[1])}
+					this.state = {know_footnote_index : true}
+					//this.setState({footnote_index : test1})
+					//this.setState({know_footnote_index : true})
+					//주석번호아니?가 참이된다...이 반복은 멈춘다. 그리고 풋노트_인덱스에는 문장을 뒤지던 중 처음 발견한[숫자]의 숫자대입
 					console.log("풋노트인덱스는.." + this.state.footnote_index)
-					console.log(test1)
+					console.log(test2)
+					console.log(this.state.know_footnote_index)
 					//4와 5를 반환한다....이제 스테이트에 참거짓 변수하나 놓고, 거짓상태면 매번 이짓하게 하자..
 				}
+
 				//console.log("풋노트인덱스는.." + this.state.footnote_index)
 			}
 			var footnote_index = this.state.footnote_index // 전 챕터에 걸쳐 있을 주석에 대한 번호. [1]부터 시작해야하니 최초값 1
 			var footnote_string = "["+String(footnote_index)+"]" // 최초의 경우에는 "[1]"
+			console.log(footnote_index)
 			var footnote_text = footnote_data[footnote_index].text //풋노트_데이터에 주석자료들...이걸 위키_데이터에 적절한 위치에 삽입
 
 
